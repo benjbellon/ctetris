@@ -62,6 +62,11 @@ typedef struct {
   GameBoard_t *board;
 } GameApp_t;
 
+typedef struct {
+  size_t size;
+  Tetromino_t **arr;
+} TetrominoLockCache_t;
+
 static GameApp_t game_app = {0};
 static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
@@ -69,6 +74,35 @@ static SpriteSheet_t sheet_tetromino = {0};
 static TetrominoCollection_t tetrominos = {0};
 static double PREV_TIME = 0.0;
 static bool spawn_tetromino = true;
+
+TetrominoLockCache_t *TetrominoLockCache_init(size_t const size) {
+  TetrominoLockCache_t *new = malloc(sizeof(TetrominoLockCache_t *));
+
+  new->size = size;
+  new->arr = malloc(sizeof(Tetromino_t *) * size);
+  memset(new->arr, 0, sizeof(Tetromino_t *) * size);
+
+  return new;
+}
+
+void TetrominoLockCache_free(TetrominoLockCache_t *o) {
+  free(o->arr);
+  free(o);
+}
+
+bool TetrominoLockCache_check_and_insert(TetrominoLockCache_t *const col,
+                                         Tetromino_t *const tetromino) {
+  for (size_t i = 0; i < col->size; i++) {
+    if (tetromino != 0 && col->arr[i] == tetromino) {
+      return true;
+    } else {
+      col->arr[i] = tetromino;
+      break;
+    }
+  }
+
+  return false;
+}
 
 Tetromino_t *Tetromino_init(SpriteSheet_t *const sheet,
                             TetrominoShape_t const shape, double spawn_x,
@@ -209,7 +243,7 @@ void GameApp_init(GameApp_t *const app) {
   app->tick_rate = 1000.0 / 1.0;
 
   // TODO: how big should the board be?
-  GameBoard_t *board = GameBoard_init(8, 20);
+  GameBoard_t *board = GameBoard_init(4, 10);
   app->board = board;
 }
 
@@ -219,8 +253,8 @@ void board_spawn_tetromino() {
   // CASE: spawn I
 
   Tetromino_t *new_tetromino =
-      Tetromino_init(&sheet_tetromino, TETROMINO_SHAPE_I, 0,
-                     game_app.board->cols / 2.0 * BLOCK_SIZE_PIXELS);
+      Tetromino_init(&sheet_tetromino, TETROMINO_SHAPE_I,
+                     game_app.board->cols / 2.0 * BLOCK_SIZE_PIXELS, 0);
   TetrominoCollection_push(&tetrominos, new_tetromino);
 
   game_app.board->arr[0][game_app.board->cols / 2] = new_tetromino;
@@ -229,12 +263,57 @@ void board_spawn_tetromino() {
   game_app.board->arr[3][game_app.board->cols / 2] = new_tetromino;
 }
 
+void GameBoard_step_down_active_tetromino(GameBoard_t *board,
+                                          Tetromino_t *tetromino) {
+  TetrominoLockCache_t *seen = TetrominoLockCache_init(tetrominos.cnt);
+
+  Tetromino_t **curr = NULL;
+  Tetromino_t **next = NULL;
+
+  for (size_t row = game_app.board->rows - 1; row > 0; row--) {
+    for (size_t col = 0; col < game_app.board->cols; col++) {
+
+      curr = &game_app.board->arr[row][col];
+      next = &game_app.board->arr[row - 1][col];
+
+      if (*curr == 0) {
+        if (*next != 0 && *next == tetromino) {
+
+          // We only want to update a Tetromino's position once per down cycle.
+          if (!TetrominoLockCache_check_and_insert(seen, *next)) {
+            (*next)->pos->y += BLOCK_SIZE_PIXELS;
+          }
+        }
+
+        *curr = *next;
+        *next = 0;
+      }
+    }
+  }
+
+  TetrominoLockCache_free(seen);
+}
+
 void board_update() {
   // We tick the board at a different rate than the smooth updates of
   // other objects...
   if (SDL_GetTicks() - PREV_TIME < game_app.tick_rate) {
     return;
   }
+
+  // if a rotation occurs, we would see it here and update the matrix
+  // if (active_tetromino_was_rotate) {
+  //     board_rotate_active_tetromino();
+  // }
+
+  GameBoard_step_down_active_tetromino(
+      game_app.board, tetrominos.tetrominos[tetrominos.cnt - 1]);
+
+  // collision detection?!
+  // if collision is bad, game over
+  // if collision is good, then keep going and do line clearing
+
+  /* GameBoard_clear_full_rows(); */
 
   if (spawn_tetromino) {
     board_spawn_tetromino();
