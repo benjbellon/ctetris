@@ -379,20 +379,18 @@ void _GameBoard_translate(GameBoard_t *const board,
                           Tetromino_t *const tetromino, int x_units,
                           int y_units) {
   int *coords = GameBoard_get_tetromino_coords(board, tetromino);
-  if (coords[COORDS_SIZE - 1] + x_units < 0 ||
-      coords[COORDS_SIZE - 1] + x_units > board->cols) {
+  if (coords[3] + x_units < 0 || coords[9] + x_units > board->cols - 1) {
     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION,
                  "Cannot shift left to col %d since it is < 0",
                  coords[COORDS_SIZE - 1]);
     return;
   }
 
-  // TODO: fix this................
   size_t start = (x_units > 0) ? 4 : 1;
-  size_t end = (x_units > 0) ? 0 : 4;
+  size_t end = (x_units > 0) ? 0 : 5;
   size_t step = (x_units > 0) ? -1 : 1;
 
-  for (size_t i = start; i > end; i += step) {
+  for (size_t i = start; i != end; i += step) {
     int row = coords[i * 2];
     int col = coords[i * 2 + 1];
 

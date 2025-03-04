@@ -6,6 +6,7 @@ set(PROJECT_NAME tetris)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(PROJECT_VERSION 1.0.0)
 set(CMAKE_C_COMPILER clang)
+set(CMAKE_CXX_CLANG_FORMAT "clang-format -style=file")
 
 project(${PROJECT_NAME} VERSION ${PROJECT_VERSION})
 
