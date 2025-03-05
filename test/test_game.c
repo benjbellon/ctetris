@@ -24,7 +24,7 @@ void ASSERT_BOARD_ELEMENTS_EQUAL(GameBoard_t *expected, GameBoard_t *actual, Tet
 void test_step_matrix_down() {
 
   GameBoard_t *board = GameBoard_init(3, 5);
-  Tetromino_t *dummy = Tetromino_init(TETROMINO_SHAPE_T, 0, 0);
+  Tetromino_t *dummy = Tetromino_init(TETROMINO_SHAPE_TAG_T, 0, 0);
 
   TetrominoCollection_t *col = TetrominoCollection_init(1);
   TetrominoCollection_push(col, dummy);
@@ -55,8 +55,8 @@ void test_step_matrix_down() {
 void test_collision_check() {
   GameBoard_t *board = GameBoard_init(3, 5);
   GameBoard_t *prev = GameBoard_init(3, 5);
-  Tetromino_t *not_locked = Tetromino_init(TETROMINO_SHAPE_T, 0, 0);
-  Tetromino_t *locked = Tetromino_init(TETROMINO_SHAPE_I, 0, 0);
+  Tetromino_t *not_locked = Tetromino_init(TETROMINO_SHAPE_TAG_T, 0, 0);
+  Tetromino_t *locked = Tetromino_init(TETROMINO_SHAPE_TAG_I, 0, 0);
 
   TetrominoCollection_t *col = TetrominoCollection_init(2);
   TetrominoCollection_push(col, locked);
@@ -87,9 +87,9 @@ void test_collision_check() {
 void test_collision_check_with_intersection() {
   GameBoard_t *board = GameBoard_init(3, 5);
   GameBoard_t *prev = GameBoard_init(3, 5);
-  Tetromino_t *not_locked = Tetromino_init(TETROMINO_SHAPE_T, 0, 0);
-  Tetromino_t *locked = Tetromino_init(TETROMINO_SHAPE_I, 0, 0);
-  Tetromino_t *another = Tetromino_init(TETROMINO_SHAPE_I, 0, 0);
+  Tetromino_t *not_locked = Tetromino_init(TETROMINO_SHAPE_TAG_T, 0, 0);
+  Tetromino_t *locked = Tetromino_init(TETROMINO_SHAPE_TAG_I, 0, 0);
+  Tetromino_t *another = Tetromino_init(TETROMINO_SHAPE_TAG_I, 0, 0);
 
   TetrominoCollection_t *col = TetrominoCollection_init(3);
   TetrominoCollection_push(col, locked);
@@ -121,9 +121,9 @@ void test_collision_check_with_intersection() {
 
 void test_tetromino_collection_contains_active() {
   TetrominoCollection_t *coll = TetrominoCollection_init(3);
-  Tetromino_t *t1 = Tetromino_init(TETROMINO_SHAPE_I, 0, 0);
-  Tetromino_t *t2 = Tetromino_init(TETROMINO_SHAPE_J, 0, 0);
-  Tetromino_t *t3 = Tetromino_init(TETROMINO_SHAPE_L, 0, 0);
+  Tetromino_t *t1 = Tetromino_init(TETROMINO_SHAPE_TAG_I, 0, 0);
+  Tetromino_t *t2 = Tetromino_init(TETROMINO_SHAPE_TAG_J, 0, 0);
+  Tetromino_t *t3 = Tetromino_init(TETROMINO_SHAPE_TAG_L, 0, 0);
 
   TetrominoCollection_push(coll, t1);
   TetrominoCollection_push(coll, t2);
@@ -137,7 +137,7 @@ void test_tetromino_collection_contains_active() {
 
 void test_rotate_right_pi_radians() {
   GameBoard_t *board = GameBoard_init(3, 5);
-  Tetromino_t *tet = Tetromino_init(TETROMINO_SHAPE_I, 0, 0);
+  Tetromino_t *tet = Tetromino_init(TETROMINO_SHAPE_TAG_I, 0, 0);
 
   TetrominoCollection_t *col = TetrominoCollection_init(3);
   TetrominoCollection_push(col, tet);
@@ -157,7 +157,7 @@ void test_rotate_right_pi_radians() {
 
 void test_get_tetromino_coords() {
   GameBoard_t *actual = GameBoard_init(3, 5);
-  Tetromino_t *tet = Tetromino_init(TETROMINO_SHAPE_I, 0, 0);
+  Tetromino_t *tet = Tetromino_init(TETROMINO_SHAPE_TAG_I, 0, 0);
 
   TetrominoCollection_t *col = TetrominoCollection_init(3);
   TetrominoCollection_push(col, tet);
@@ -172,12 +172,13 @@ void test_get_tetromino_coords() {
   }
 
   int *coords = GameBoard_get_tetromino_coords(actual, tet);
+
   TEST_ASSERT_EQUAL_INT_ARRAY(expected, coords, 10);
 }
 
 void test_translate_right() {
   GameBoard_t *board = GameBoard_init(3, 5);
-  Tetromino_t *tet = Tetromino_init(TETROMINO_SHAPE_I, 0, 0);
+  Tetromino_t *tet = Tetromino_init(TETROMINO_SHAPE_TAG_I, 0, 0);
 
   TetrominoCollection_t *col = TetrominoCollection_init(3);
   TetrominoCollection_push(col, tet);
@@ -207,13 +208,15 @@ void test_translate_left() {
   GameBoard_t *actual = GameBoard_init(10, 15);
   GameBoard_t *expected = GameBoard_init(10, 15);
 
-  Tetromino_t *I = Tetromino_init(TETROMINO_SHAPE_I, 0, 0);
-  Tetromino_t *T = Tetromino_init(TETROMINO_SHAPE_T, 0, 0);
-  Tetromino_t *J = Tetromino_init(TETROMINO_SHAPE_J, 0, 0);
-  Tetromino_t *L = Tetromino_init(TETROMINO_SHAPE_L, 0, 0);
-  Tetromino_t *O = Tetromino_init(TETROMINO_SHAPE_O, 0, 0);
-  Tetromino_t *S = Tetromino_init(TETROMINO_SHAPE_S, 0, 0);
-  Tetromino_t *Z = Tetromino_init(TETROMINO_SHAPE_Z, 0, 0);
+  // TODO: create game board, insert piece, shift and check
+
+  Tetromino_t *I = Tetromino_init(TETROMINO_SHAPE_TAG_I, 0, 0);
+  Tetromino_t *T = Tetromino_init(TETROMINO_SHAPE_TAG_T, 0, 0);
+  Tetromino_t *J = Tetromino_init(TETROMINO_SHAPE_TAG_J, 0, 0);
+  Tetromino_t *L = Tetromino_init(TETROMINO_SHAPE_TAG_L, 0, 0);
+  Tetromino_t *O = Tetromino_init(TETROMINO_SHAPE_TAG_O, 0, 0);
+  Tetromino_t *S = Tetromino_init(TETROMINO_SHAPE_TAG_S, 0, 0);
+  Tetromino_t *Z = Tetromino_init(TETROMINO_SHAPE_TAG_Z, 0, 0);
 
   TetrominoCollection_t *col = TetrominoCollection_init(7);
   TetrominoCollection_push(col, I);
@@ -227,13 +230,13 @@ void test_translate_left() {
   // clang-format off
   Tetromino_t *initial[10][15] = {
       {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
-      {NULL,    I,    I,    I,    I, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
+      {NULL,    I,    I,    I,    I, NULL, NULL,    T, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
       {NULL, NULL, NULL, NULL, NULL, NULL,    T,    T,    T, NULL, NULL, NULL, NULL, NULL, NULL},
-      {NULL, NULL, NULL, NULL, NULL, NULL, NULL,    T, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
+      {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
       {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,    O,    O, NULL, NULL, NULL},
-      {NULL, NULL, NULL,    J, NULL,    L, NULL, NULL, NULL, NULL,    O,    O, NULL, NULL, NULL},
-      {NULL, NULL, NULL,    J, NULL,    L, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
-      {NULL, NULL,    J,    J, NULL,    L,    L, NULL,    Z,    Z, NULL, NULL, NULL,    S,    S},
+      {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,    O,    O, NULL, NULL, NULL},
+      {NULL,    J, NULL, NULL, NULL, NULL, NULL,    L, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
+      {NULL,    J,    J,    J, NULL,    L,    L,    L,    Z,    Z, NULL, NULL, NULL,    S,    S},
       {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,    Z,    Z, NULL,    S,    S, NULL},
       {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}};
   // clang-format on
@@ -241,13 +244,13 @@ void test_translate_left() {
   // clang-format off
   Tetromino_t *updated[10][15] = {
       {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
-      {   I,    I,    I,    I, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
+      {   I,    I,    I,    I, NULL, NULL,    T, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
       {NULL, NULL, NULL, NULL, NULL,    T,    T,    T, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
-      {NULL, NULL, NULL, NULL, NULL, NULL,    T, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
+      {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
       {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,    O,    O, NULL, NULL, NULL, NULL},
-      {NULL, NULL,    J, NULL,    L, NULL, NULL, NULL, NULL,    O,    O, NULL, NULL, NULL, NULL},
-      {NULL, NULL,    J, NULL,    L, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
-      {NULL,    J,    J, NULL,    L,    L, NULL,    Z,    Z, NULL, NULL, NULL,    S,    S, NULL},
+      {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,    O,    O, NULL, NULL, NULL, NULL},
+      {   J, NULL, NULL, NULL, NULL, NULL,    L, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
+      {   J,    J,    J, NULL,    L,    L,    L,    Z,    Z, NULL, NULL, NULL,    S,    S, NULL},
       {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,    Z,    Z, NULL,    S,    S, NULL, NULL},
       {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}};
   // clang-format on
@@ -259,6 +262,24 @@ void test_translate_left() {
 
   GameBoard_translate_left(actual, I);
   ASSERT_BOARD_ELEMENTS_EQUAL(expected, actual, I);
+
+  GameBoard_translate_left(actual, J);
+  ASSERT_BOARD_ELEMENTS_EQUAL(expected, actual, J);
+
+  GameBoard_translate_left(actual, L);
+  ASSERT_BOARD_ELEMENTS_EQUAL(expected, actual, L);
+
+  GameBoard_translate_left(actual, O);
+  ASSERT_BOARD_ELEMENTS_EQUAL(expected, actual, O);
+
+  GameBoard_translate_left(actual, S);
+  ASSERT_BOARD_ELEMENTS_EQUAL(expected, actual, S);
+
+  GameBoard_translate_left(actual, T);
+  ASSERT_BOARD_ELEMENTS_EQUAL(expected, actual, T);
+
+  GameBoard_translate_left(actual, Z);
+  ASSERT_BOARD_ELEMENTS_EQUAL(expected, actual, Z);
 }
 
 int main(int argc, char *argv[]) {
