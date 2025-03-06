@@ -44,40 +44,12 @@ int *TetrominoMatrix_rotate_map_1pi(TetrominoMatrix *mat) {
   return arr;
 }
 
-TetrominoLockCache_t *TetrominoLockCache_init(size_t const size) {
-  TetrominoLockCache_t *new = malloc(sizeof(TetrominoLockCache_t *));
-
-  new->size = size;
-  new->arr = malloc(sizeof(Tetromino_t *) * size);
-  memset(new->arr, 0, sizeof(Tetromino_t *) * size);
-
-  return new;
-}
-
 Tetromino_t **get_active_tetromino(TetrominoCollection_t *coll) {
   if (coll->cnt == 0) {
     return NULL;
   }
 
   return &coll->tetrominos[coll->cnt - 1];
-}
-
-void TetrominoLockCache_free(TetrominoLockCache_t *o) {
-  free(o->arr);
-  free(o);
-}
-
-bool TetrominoLockCache_check_and_insert(TetrominoLockCache_t *const col, Tetromino_t *const tetromino) {
-  for (size_t i = 0; i < col->size; i++) {
-    if (tetromino != 0 && col->arr[i] == tetromino) {
-      return true;
-    } else {
-      col->arr[i] = tetromino;
-      break;
-    }
-  }
-
-  return false;
 }
 
 Tetromino_t *Tetromino_init(TetrominoShapeTag const tag, int row, int col) {
@@ -314,6 +286,10 @@ void GameBoard_spawn_tetromino(GameBoard_t **board, TetrominoCollection_t *col, 
   Tetromino_t *new_tetromino = Tetromino_init(TETROMINO_SHAPE_TAG_I, spawn_row, spawn_col);
   TetrominoCollection_push(col, new_tetromino);
 
+  if (GameBoard_collision(*board, new_tetromino, 0, 0)) {
+    printf("GAME OVER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+  }
+
   for (size_t i = 0; i < TETROMINO_MAP_SIZE; i = i + 2) {
     int r = new_tetromino->mat->map[i] + new_tetromino->mat->row0;
     int c = new_tetromino->mat->map[i + 1] + new_tetromino->mat->col0;
@@ -328,7 +304,7 @@ void Tetromino_free(Tetromino_t *t) {
   free(t);
 }
 
-int *GameBoard_get_tetromino_coords(GameBoard_t *const board, Tetromino_t const *const tetromino) {
+int *GameBoard_get_tetromino_coords(GameBoard_t const *const board, Tetromino_t const *const tetromino) {
   int *coords = TetrominoMatrix_rotate_map_0pi(tetromino->mat);
 
   for (size_t i = 0; i < TETROMINO_MAP_SIZE; i = i + 2) {
@@ -339,16 +315,49 @@ int *GameBoard_get_tetromino_coords(GameBoard_t *const board, Tetromino_t const 
   return coords;
 }
 
+bool GameBoard_collision(GameBoard_t const *const board, Tetromino_t const *const t, int rows, int cols) {
+  int *coords = GameBoard_get_tetromino_coords(board, t);
+  bool did_collide = false;
+
+  for (size_t i = 0; i < TETROMINO_MAP_SIZE; i = i + 2) {
+    int curr_row = coords[i];
+    int curr_col = coords[i + 1];
+
+    if (curr_row + rows < 0 || curr_row + rows > board->rows - 1) {
+      SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "COLLISION: cannot translate vertically to row %d", coords[i]);
+      did_collide = true;
+      break;
+    }
+
+    if (curr_col + cols < 0 || curr_col + cols > board->cols - 1) {
+      SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "COLLISION: cannot translate horizontally to col %d", coords[i + 1]);
+      did_collide = true;
+      break;
+    }
+
+    if (board->arr[curr_row + rows][curr_col + cols] != NULL && board->arr[curr_row + rows][curr_col + cols] != t) {
+      SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "COLLISION: cannot translate new new position (%d %d)",
+                   curr_row + rows, curr_col + cols);
+      did_collide = true;
+      break;
+    }
+  }
+
+  free(coords);
+  return did_collide;
+}
+
 void _GameBoard_translate(GameBoard_t *const board, Tetromino_t *const tetromino, int rows, int cols) {
   int *coords = GameBoard_get_tetromino_coords(board, tetromino);
-  if (coords[0] + rows < 0 || coords[0] + rows > board->cols ||
 
-      coords[1] + cols < 0 || coords[1] > board->cols) {
-    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "Cannot shift left to col %d since it is < 0", coords[COORDS_SIZE - 1]);
+  if (GameBoard_collision(board, tetromino, rows, cols)) {
+    tetromino->state = TETROMINO_STATE_LOCKED;
     return;
   }
 
-  // First, clear the existing position, then update the new positions
+  // The simplest solution to move the tetromino's cached board state is to clear the previous position prior to writing
+  // the new position. In this way, we don't need to worry about the ordering of the writes, which may accidentally add
+  // or remove a previous element..
   for (size_t i = 0; i < TETROMINO_MAP_SIZE; i = i + 2) {
     int row = coords[i];
     int col = coords[i + 1];
@@ -363,94 +372,24 @@ void _GameBoard_translate(GameBoard_t *const board, Tetromino_t *const tetromino
     board->arr[row + rows][col + cols] = tetromino;
   }
 
+  tetromino->mat->row0 += rows;
+  tetromino->mat->col0 += cols;
+
   free(coords);
 }
 void GameBoard_translate_left(GameBoard_t *const board, Tetromino_t *const tetromino) {
   _GameBoard_translate(board, tetromino, 0, -1);
-  tetromino->mat->col0--;
 }
 
 void GameBoard_translate_right(GameBoard_t *const board, Tetromino_t *const tetromino) {
   _GameBoard_translate(board, tetromino, 0, 1);
-  tetromino->mat->col0++;
 }
 void GameBoard_translate_down(GameBoard_t *const board, Tetromino_t *const tetromino) {
   _GameBoard_translate(board, tetromino, 1, 0);
-  tetromino->mat->row0++;
-}
-
-void GameBoard_rotate_pi_radians(GameBoard_t *const board, Tetromino_t *const tetromino) {
-  Tetromino_t *tmp = NULL;
-  int bound_x0 = 0;
-  int bound_y0 = 0;
-  int bound_len = 0;
-
-  // find active tetromino
-  // based on the rotation of the tetromino and the first tile we come across,
-  // we can calculate the other tiles in the rotation square, which we can then
-  // use to rotate using A[i,j] = A[j,m-1-i]
-
-  // TODO: rather than search, just cache the tetromino position...
-  for (size_t row = 0; row < board->rows; row++) {
-    for (size_t col = 0; col < board->cols; col++) {
-      if (board->arr[row][col] == tetromino) {
-        // TODO: get anchor (0,0)
-        if (tetromino->mat->t == TETROMINO_SHAPE_TAG_I) {
-          bound_len = 4;
-        } else {
-          bound_len = 3;
-        }
-      }
-    }
-  }
-
-  assert(bound_len != 0);
-  for (size_t row = 0; row < bound_len; row++) {
-    for (size_t col = 0; col < bound_len; col++) {
-      tmp = board->arr[bound_x0][bound_y0];
-    }
-  }
-
-  // TODO: update rotation...
-  // TODO: check for kickback logic...
 }
 
 void GameBoard_clear_full_rows(GameBoard_t *board) {
   // TODO
-}
-
-void GameBoard_collision_check(GameBoard_t const *const curr, GameBoard_t const *const prev) {
-  for (size_t row = curr->rows - 1; row > 0; row--) {
-    for (size_t col = 0; col < curr->cols; col++) {
-
-      if (curr->arr[row][col] != NULL && prev->arr[row][col] != NULL && curr->arr[row][col] != prev->arr[row][col]) {
-
-        curr->arr[row][col]->state = TETROMINO_STATE_INTERSECTED;
-        prev->arr[row][col]->state = TETROMINO_STATE_INTERSECTED;
-
-        return;
-      }
-
-      if (curr->arr[row][col] == NULL) {
-
-        continue;
-
-      } else if (curr->arr[row][col]->state == TETROMINO_STATE_LOCKED) {
-
-        continue;
-
-      } else if (row == curr->rows - 1) {
-
-        curr->arr[row][col]->state = TETROMINO_STATE_LOCKED;
-
-      } else if (row < curr->rows - 1 && curr->arr[row + 1][col] != NULL &&
-                 curr->arr[row + 1][col] != curr->arr[row][col]) {
-
-        assert(curr->arr[row + 1][col]->state == TETROMINO_STATE_LOCKED);
-        curr->arr[row][col]->state = TETROMINO_STATE_LOCKED;
-      }
-    }
-  }
 }
 
 // TODO: Maybe change this to get_active, and just check for null??
@@ -491,11 +430,7 @@ void GameBoard_update(GameBoard_t *board, GameApp_t *app_state) {
     return;
   } else {
     GameBoard_translate_down(board, app_state->tetrominos->tetrominos[app_state->tetrominos->cnt - 1]);
-    GameBoard_collision_check(board, app_state->previous_board);
-
     // TODO: line clearing algorithm drops everything down
-
-    GameBoard_copy(app_state->previous_board, board);
   }
 
   PREV_TIME = SDL_GetTicks();
@@ -517,7 +452,6 @@ void GameApp_handle_input(GameApp_t *state) {
     break;
   case USER_INPUT_ROTATE_RIGHT:
     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "Input: Rotate Right\n");
-    GameBoard_rotate_pi_radians(state->board, state->tetrominos->tetrominos[state->tetrominos->cnt - 1]);
     break;
   case USER_INPUT_ROTATE_LEFT:
     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "Input: Rotate Left\n");

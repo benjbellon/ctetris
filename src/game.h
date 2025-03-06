@@ -85,17 +85,10 @@ typedef struct {
   TetrominoCollection_t *tetrominos;
 } GameApp_t;
 
-typedef struct {
-  size_t size;
-  Tetromino_t **arr;
-} TetrominoLockCache_t;
-
-TetrominoLockCache_t *TetrominoLockCache_init(size_t const size);
-void TetrominoLockCache_free(TetrominoLockCache_t *o);
-bool TetrominoLockCache_check_and_insert(TetrominoLockCache_t *const col, Tetromino_t *const tetromino);
 Tetromino_t *Tetromino_init(TetrominoShapeTag const shape, int row, int col);
 void Tetromino_free(Tetromino_t *t);
 
+// TODO: maybe instead just use an Enum with PI, 2PI, 3PI
 int *TetrominoMatrix_rotate_map_0pi(TetrominoMatrix *mat);
 int *TetrominoMatrix_rotate_map_1pi(TetrominoMatrix *mat);
 int *TetrominoMatrix_rotate_map_2pi(TetrominoMatrix *mat);
@@ -111,14 +104,12 @@ int SpriteSheet_init(SDL_Renderer *renderer, SpriteSheet_t *const sheet, char co
 GameBoard_t *GameBoard_init(int cols, int rows);
 void GameBoard_print_debug(GameBoard_t const *const board);
 
-int *GameBoard_get_tetromino_coords(GameBoard_t *const board, Tetromino_t const *const tetromino);
+int *GameBoard_get_tetromino_coords(GameBoard_t const *const board, Tetromino_t const *const tetromino);
 void GameBoard_translate_left(GameBoard_t *const board, Tetromino_t *const tetromino);
 void GameBoard_translate_right(GameBoard_t *const board, Tetromino_t *const tetromino);
 void GameBoard_translate_down(GameBoard_t *const board, Tetromino_t *const tetromino);
-void GameBoard_rotate_pi_radians(GameBoard_t *const board, Tetromino_t *const tetromino);
-void GameBoard_rotate_neg_pi_radians(GameBoard_t *const board, Tetromino_t *const tetromino);
 void GameBoard_clear_full_rows(GameBoard_t *board);
-void GameBoard_collision_check(GameBoard_t const *const curr, GameBoard_t const *const prev);
+bool GameBoard_collision(GameBoard_t const *const board, Tetromino_t const *const t, int const rows, int const cols);
 void GameBoard_update(GameBoard_t *board, GameApp_t *app_state);
 void GameBoard_spawn_tetromino(GameBoard_t **board, TetrominoCollection_t *col, int spawn_row, int spawn_col);
 void GameBoard_copy(GameBoard_t *const dest, GameBoard_t const *const src);
@@ -128,47 +119,5 @@ void GameApp_handle_input(GameApp_t *state);
 void GameApp_update(GameApp_t *state);
 
 void SpriteSheet_tetrominos(SpriteSheet_t *sheet);
-
-// Each row contains a description of the tetromino bounding box.
-// The first two elements are the bounding box origin, followed by
-// the associated x and y coordinates of the bounding box.
-//
-// The I, O tetrominos have 4x4 bounding boxes, all others are 3x3
-static const int TETROMINO_BOUNDING_BOX[][COORDS_SIZE] = {
-    {0, 0, 1, 0, 1, 1, 1, 2, 1, 3}, // I_0
-    /* {0, 0, 2, 0, 2, 1, 2, 2, 2, 3}, // I_90 */
-    /* {0, 0, 2, 0, 2, 1, 2, 2, 2, 3}, // I_180 */
-    /* {0, 0, 0, 1, 1, 1, 2, 1, 3, 1}, // I_270 */
-
-    {0, 0, 0, 0, 1, 0, 1, 1, 1, 2}, // J_0
-    /* {0, 0, 0, 1, 0, 2, 1, 1, 2, 1}, // J_90 */
-    /* {0, 0, 1, 0, 1, 1, 1, 2, 2, 2}, // J_180 */
-    /* {0, 0, 2, 0, 0, 1, 1, 1, 2, 1}, // J_270 */
-
-    {0, 0, 1, 0, 1, 1, 1, 2, 0, 2}, // L_0
-    /* {0, 0, 0, 1, 1, 1, 2, 1, 2, 2}, // L_90 */
-    /* {0, 0, 1, 0, 1, 1, 1, 2, 2, 0}, // L_180 */
-    /* {0, 0, 0, 0, 0, 1, 1, 1, 2, 1}, // L_270 */
-
-    {0, 0, 0, 1, 0, 2, 1, 1, 1, 2}, // O_0
-    /* {0, 0, 0, 1, 0, 2, 1, 1, 1, 2}, // O_90 */
-    /* {0, 0, 0, 1, 0, 2, 1, 1, 1, 2}, // O_180 */
-    /* {0, 0, 0, 1, 0, 2, 1, 1, 1, 2}, // O_270 */
-
-    {0, 0, 0, 1, 0, 2, 1, 0, 1, 1}, // S_0
-    /* {0, 0, 0, 1, 1, 1, 1, 2, 2, 2}, // S_90 */
-    /* {0, 0, 2, 0, 2, 1, 1, 1, 1, 2}, // S_180 */
-    /* {0, 0, 0, 0, 1, 0, 1, 1, 2, 1}, // S_270 */
-
-    {0, 0, 0, 1, 1, 0, 1, 1, 1, 2}, // T_0
-    /* {0, 0, 0, 1, 1, 1, 2, 1, 1, 2}, // T_90 */
-    /* {0, 0, 1, 0, 1, 1, 1, 2, 2, 1}, // T_180 */
-    /* {0, 0, 0, 1, 1, 0, 1, 1, 2, 1}, // T_270 */
-
-    {0, 0, 0, 0, 0, 1, 1, 1, 1, 2}, // Z_0
-                                    /* {0, 0, 0, 2, 1, 1, 1, 2, 2, 1}, // Z_90 */
-                                    /* {0, 0, 1, 0, 1, 1, 2, 1, 2, 2}, // Z_180 */
-                                    /* {0, 0, 0, 1, 1, 0, 1, 1, 2, 0}, // Z_270 */
-};
 
 #endif
