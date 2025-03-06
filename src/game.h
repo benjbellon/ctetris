@@ -48,6 +48,7 @@ typedef enum {
   TETROMINO_STATE_PENDING,
 } TetrominoState_t;
 
+// TODO: This should be called TetrominoShap imo, and it should include deg rotated.
 typedef struct {
   int row0, col0;
   size_t size;
@@ -57,9 +58,6 @@ typedef struct {
 
 typedef struct {
   SpriteSheet_t *sheet;
-  // TODO: clip_0, clip_90, clip_180, clip_270 stored as a big array
-  // and then there is an enum we use to flip, which is also the degress?
-  // TETROMINO_0, TETROMINO_90, etc...
   SDL_FRect *clip;
   int deg_rot;
   TetrominoState_t state;
@@ -115,7 +113,7 @@ void GameBoard_copy(GameBoard_t *const dest, GameBoard_t const *const src);
 void GameBoard_print_debug(GameBoard_t const *const board);
 void GameBoard_rotate_neg_pi(GameBoard_t *const board, Tetromino_t *const tetromino);
 void GameBoard_rotate_pi(GameBoard_t *const board, Tetromino_t *const tetromino);
-void GameBoard_spawn_tetromino(GameBoard_t **board, TetrominoCollection_t *col, int spawn_row, int spawn_col);
+void GameBoard_insert_tetromino(GameBoard_t *const board, Tetromino_t *const new_tetromino);
 void GameBoard_translate_down(GameBoard_t *const board, Tetromino_t *const tetromino);
 void GameBoard_translate_left(GameBoard_t *const board, Tetromino_t *const tetromino);
 void GameBoard_translate_right(GameBoard_t *const board, Tetromino_t *const tetromino);

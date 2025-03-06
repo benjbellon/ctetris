@@ -21,6 +21,14 @@ static const int TETROMINO_MAP_S[TETROMINO_MAP_SIZE] = {0, 1, 0, 2, 1, 0, 1, 1};
 static const int TETROMINO_MAP_T[TETROMINO_MAP_SIZE] = {0, 1, 1, 0, 1, 1, 1, 2};
 static const int TETROMINO_MAP_Z[TETROMINO_MAP_SIZE] = {0, 0, 0, 1, 1, 1, 1, 2};
 
+void _GameBoard_print_tetromino(GameBoard_t const *const b, Tetromino_t const *const t) {
+  int const *const coords = GameBoard_get_tetromino_coords(b, t);
+  for (size_t i = 0; i < TETROMINO_MAP_SIZE; i = i + 2) {
+    printf("(%d %d) ", coords[i], coords[i + 1]);
+  }
+  printf("\n");
+}
+
 void SpriteSheet_tetrominos(SpriteSheet_t *sheet) { sheet_tetrominos = sheet; }
 
 int *TetrominoMatrix_rotate(TetrominoMatrix const *const mat, int const deg) {
@@ -56,7 +64,7 @@ int *TetrominoMatrix_rotate(TetrominoMatrix const *const mat, int const deg) {
 }
 
 void Tetromino_rotate(Tetromino_t *const t, int const deg) {
-  assert(deg == 0 || deg == 90 || deg == 180 || deg == 270 && "invalid tetromino rotation");
+  assert(abs(deg) % 90 == 0 && "invalid tetromino rotation");
 
   t->deg_rot = (t->deg_rot + deg) % 360;
 }
@@ -84,6 +92,11 @@ Tetromino_t *Tetromino_init(TetrominoShapeTag const tag, int row, int col) {
   new->deg_rot = 0;
   new->state = TETROMINO_STATE_ACTIVE;
 
+  new->clip->x = 0;
+  new->clip->y = 0;
+  new->clip->h = BLOCK_SIZE_PIXELS;
+  new->clip->w = BLOCK_SIZE_PIXELS;
+
   // I shape should start horizontal in row 2 of 4
   // s.t. the origin of the bounding box would be (-1, -1)
   //
@@ -99,60 +112,24 @@ Tetromino_t *Tetromino_init(TetrominoShapeTag const tag, int row, int col) {
   //
   switch (tag) {
   case TETROMINO_SHAPE_TAG_I:
-    // TODO: read the data from a file....
-    new->clip->x = 0;
-    new->clip->y = 0;
-    new->clip->h = BLOCK_SIZE_PIXELS;
-    new->clip->w = BLOCK_SIZE_PIXELS;
-
     *new->mat = (TetrominoMatrix){.t = tag, .row0 = row - 1, .col0 = col, .map = TETROMINO_MAP_I, .size = 4};
     break;
   case TETROMINO_SHAPE_TAG_J:
-    new->clip->x = 0;
-    new->clip->y = 0;
-    new->clip->h = 4 * BLOCK_SIZE_PIXELS;
-    new->clip->w = 4 * BLOCK_SIZE_PIXELS;
-
     *new->mat = (TetrominoMatrix){.t = tag, .row0 = row, .col0 = col, .map = TETROMINO_MAP_J, .size = 3};
     break;
   case TETROMINO_SHAPE_TAG_L:
-    new->clip->x = 0;
-    new->clip->y = 0;
-    new->clip->h = 4 * BLOCK_SIZE_PIXELS;
-    new->clip->w = 4 * BLOCK_SIZE_PIXELS;
-
     *new->mat = (TetrominoMatrix){.t = tag, .row0 = row, .col0 = col - 2, .map = TETROMINO_MAP_L, .size = 3};
     break;
   case TETROMINO_SHAPE_TAG_O:
-    new->clip->x = 0;
-    new->clip->y = 0;
-    new->clip->h = 4 * BLOCK_SIZE_PIXELS;
-    new->clip->w = 4 * BLOCK_SIZE_PIXELS;
-
     *new->mat = (TetrominoMatrix){.t = tag, .row0 = row, .col0 = col, .map = TETROMINO_MAP_O, .size = 2};
     break;
   case TETROMINO_SHAPE_TAG_S:
-    new->clip->x = 0;
-    new->clip->y = 0;
-    new->clip->h = 4 * BLOCK_SIZE_PIXELS;
-    new->clip->w = 4 * BLOCK_SIZE_PIXELS;
-
     *new->mat = (TetrominoMatrix){.t = tag, .row0 = row, .col0 = col - 1, .map = TETROMINO_MAP_S, .size = 3};
     break;
   case TETROMINO_SHAPE_TAG_T:
-    new->clip->x = 0;
-    new->clip->y = 0;
-    new->clip->h = 4 * BLOCK_SIZE_PIXELS;
-    new->clip->w = 4 * BLOCK_SIZE_PIXELS;
-
     *new->mat = (TetrominoMatrix){.t = tag, .row0 = row, .col0 = col - 1, .map = TETROMINO_MAP_T, .size = 3};
     break;
   case TETROMINO_SHAPE_TAG_Z:
-    new->clip->x = 0;
-    new->clip->y = 0;
-    new->clip->h = 4 * BLOCK_SIZE_PIXELS;
-    new->clip->w = 4 * BLOCK_SIZE_PIXELS;
-
     *new->mat = (TetrominoMatrix){.t = tag, .row0 = row, .col0 = col, .map = TETROMINO_MAP_Z, .size = 3};
     break;
   }
@@ -193,31 +170,19 @@ void TetrominoCollection_push(TetrominoCollection_t *col, Tetromino_t *const new
   col->cnt += 1;
 }
 
-SDL_FRect *Tetromino_render_position(Tetromino_t const *const o) {
-  // TODO: consider rotations...
-  SDL_FRect *pos_1 = malloc(sizeof(SDL_FRect));
-
-  pos_1->x = o->mat->col0 * BLOCK_SIZE_PIXELS;
-  pos_1->y = o->mat->row0 * BLOCK_SIZE_PIXELS;
-  pos_1->h = BLOCK_SIZE_PIXELS;
-  pos_1->w = BLOCK_SIZE_PIXELS;
-
-  return pos_1;
-}
-
-void TetrominoCollection_render(TetrominoCollection_t *col, GameBoard_t *board, SDL_Renderer *renderer) {
+void TetrominoCollection_render(TetrominoCollection_t *coll, GameBoard_t *board, SDL_Renderer *renderer) {
   SDL_FRect *pos = malloc(sizeof(SDL_FRect));
   memset(pos, 0, sizeof(SDL_FRect));
 
   pos->h = BLOCK_SIZE_PIXELS;
   pos->w = BLOCK_SIZE_PIXELS;
 
-  for (size_t i = 0; i < col->cnt; i++) {
-    int *coords = GameBoard_get_tetromino_coords(board, col->tetrominos[i]);
+  for (size_t i = 0; i < coll->cnt; i++) {
+    int *coords = GameBoard_get_tetromino_coords(board, coll->tetrominos[i]);
     for (size_t e = 0; e < TETROMINO_MAP_SIZE; e = e + 2) {
       pos->x = coords[e + 1] * BLOCK_SIZE_PIXELS;
       pos->y = coords[e] * BLOCK_SIZE_PIXELS;
-      SDL_RenderTexture(renderer, col->tetrominos[i]->sheet->sheet, col->tetrominos[i]->clip, pos);
+      SDL_RenderTexture(renderer, coll->tetrominos[i]->sheet->sheet, coll->tetrominos[i]->clip, pos);
     }
   }
 
@@ -324,17 +289,8 @@ void GameBoard_copy(GameBoard_t *const dest, GameBoard_t const *const src) {
   }
 }
 
-void GameBoard_spawn_tetromino(GameBoard_t **board, TetrominoCollection_t *col, int spawn_row, int spawn_col) {
-  // TODO: get the shape in waiting, that's the one to use
-  // Meanwhile a new "shape in waiting" will be randomly selected
-
-  assert(spawn_row >= 0 && spawn_row < (*board)->rows && "invariant: spawn row is out of bounds");
-  assert(spawn_col >= 0 || spawn_col > (*board)->cols - 1 && "invariant: spawn col is out of bounds");
-
-  Tetromino_t *new_tetromino = Tetromino_init(TETROMINO_SHAPE_TAG_I, spawn_row, spawn_col);
-  TetrominoCollection_push(col, new_tetromino);
-
-  if (GameBoard_collision(*board, new_tetromino, 0, 0)) {
+void GameBoard_insert_tetromino(GameBoard_t *const board, Tetromino_t *const new_tetromino) {
+  if (GameBoard_collision(board, new_tetromino, 0, 0)) {
     printf("GAME OVER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
   }
 
@@ -342,7 +298,7 @@ void GameBoard_spawn_tetromino(GameBoard_t **board, TetrominoCollection_t *col, 
     int r = new_tetromino->mat->map[i] + new_tetromino->mat->row0;
     int c = new_tetromino->mat->map[i + 1] + new_tetromino->mat->col0;
 
-    (*board)->arr[r][c] = new_tetromino;
+    board->arr[r][c] = new_tetromino;
   }
 }
 
@@ -395,6 +351,7 @@ bool GameBoard_collision(GameBoard_t const *const board, Tetromino_t *const t, i
 
     if (curr_row + rows == board->rows ||
         board->arr[curr_row + rows][curr_col + cols] != NULL && board->arr[curr_row + rows][curr_col + cols] != t) {
+
       SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "COLLISION: cannot translate new new position (%d %d)",
                    curr_row + rows, curr_col + cols);
       did_collide = true;
@@ -438,8 +395,18 @@ void _GameBoard_translate(GameBoard_t *const board, Tetromino_t *const tetromino
 }
 
 void _GameBoard_rotate(GameBoard_t *const board, Tetromino_t *const tetromino, int const deg) {
+  // TODO: what's happening..............................
+  // I think it's that the rotation happens after the step down...so the calculated previous
+  // coords are incorrect.
+  //
+  // 1. I could scan the entire board and remove all references to this tetromino
+  // 2. I could cache the previous coords and just remove them
+  // 3. I could store a counter of down steps since last cleared and then add those row back for clear...
+
+  int *prev_coords = GameBoard_get_tetromino_coords(board, tetromino);
+
   Tetromino_rotate(tetromino, deg);
-  int *coords = GameBoard_get_tetromino_coords(board, tetromino);
+  int *next_coords = GameBoard_get_tetromino_coords(board, tetromino);
 
   if (GameBoard_collision(board, tetromino, 0, 0)) {
     Tetromino_rotate(tetromino, -deg);
@@ -447,21 +414,25 @@ void _GameBoard_rotate(GameBoard_t *const board, Tetromino_t *const tetromino, i
     return;
   }
 
+  // before I clear, rotate back
+  Tetromino_rotate(tetromino, -deg);
   for (size_t i = 0; i < TETROMINO_MAP_SIZE; i = i + 2) {
-    int row = coords[i];
-    int col = coords[i + 1];
+    int row = prev_coords[i];
+    int col = prev_coords[i + 1];
 
     board->arr[row][col] = NULL;
   }
 
+  Tetromino_rotate(tetromino, deg);
   for (size_t i = 0; i < TETROMINO_MAP_SIZE; i = i + 2) {
-    int row = coords[i];
-    int col = coords[i + 1];
+    int row = next_coords[i];
+    int col = next_coords[i + 1];
 
     board->arr[row][col] = tetromino;
   }
 
-  free(coords);
+  free(prev_coords);
+  free(next_coords);
 }
 
 void GameBoard_translate_left(GameBoard_t *const board, Tetromino_t *const tetromino) {
@@ -515,7 +486,12 @@ void GameBoard_update(GameBoard_t *board, GameApp_t *app_state) {
   //////////////////////////////////////////////////
 
   if (!TetrominoCollection_contains_active(app_state->tetrominos)) {
-    GameBoard_spawn_tetromino(&board, app_state->tetrominos, 0, 4);
+    // TODO: get the shape in waiting, that's the one to use
+    // Meanwhile a new "shape in waiting" will be randomly selected
+
+    Tetromino_t *new_tetromino = Tetromino_init(TETROMINO_SHAPE_TAG_I, 0, 0);
+    TetrominoCollection_push(app_state->tetrominos, new_tetromino);
+    GameBoard_insert_tetromino(board, new_tetromino);
   }
 
   // We tick the board at a different rate than the smooth updates of
