@@ -99,10 +99,11 @@ Tetromino_t *Tetromino_init(TetrominoShapeTag const tag, int row, int col) {
   //
   switch (tag) {
   case TETROMINO_SHAPE_TAG_I:
+    // TODO: read the data from a file....
     new->clip->x = 0;
     new->clip->y = 0;
-    new->clip->h = 4 * BLOCK_SIZE_PIXELS;
-    new->clip->w = 4 * BLOCK_SIZE_PIXELS;
+    new->clip->h = BLOCK_SIZE_PIXELS;
+    new->clip->w = BLOCK_SIZE_PIXELS;
 
     *new->mat = (TetrominoMatrix){.t = tag, .row0 = row - 1, .col0 = col, .map = TETROMINO_MAP_I, .size = 4};
     break;
@@ -198,18 +199,29 @@ SDL_FRect *Tetromino_render_position(Tetromino_t const *const o) {
 
   pos_1->x = o->mat->col0 * BLOCK_SIZE_PIXELS;
   pos_1->y = o->mat->row0 * BLOCK_SIZE_PIXELS;
-  pos_1->h = 4 * BLOCK_SIZE_PIXELS;
-  pos_1->w = BLOCK_SIZE_PIXELS * 4;
+  pos_1->h = BLOCK_SIZE_PIXELS;
+  pos_1->w = BLOCK_SIZE_PIXELS;
 
   return pos_1;
 }
 
-void TetrominoCollection_render(TetrominoCollection_t *col, SDL_Renderer *renderer) {
+void TetrominoCollection_render(TetrominoCollection_t *col, GameBoard_t *board, SDL_Renderer *renderer) {
+  SDL_FRect *pos = malloc(sizeof(SDL_FRect));
+  memset(pos, 0, sizeof(SDL_FRect));
+
+  pos->h = BLOCK_SIZE_PIXELS;
+  pos->w = BLOCK_SIZE_PIXELS;
 
   for (size_t i = 0; i < col->cnt; i++) {
-    SDL_FRect *pos = Tetromino_render_position(col->tetrominos[i]);
-    SDL_RenderTexture(renderer, col->tetrominos[i]->sheet->sheet, col->tetrominos[i]->clip, pos);
+    int *coords = GameBoard_get_tetromino_coords(board, col->tetrominos[i]);
+    for (size_t e = 0; e < TETROMINO_MAP_SIZE; e = e + 2) {
+      pos->x = coords[e + 1] * BLOCK_SIZE_PIXELS;
+      pos->y = coords[e] * BLOCK_SIZE_PIXELS;
+      SDL_RenderTexture(renderer, col->tetrominos[i]->sheet->sheet, col->tetrominos[i]->clip, pos);
+    }
   }
+
+  free(pos);
 }
 
 int SpriteSheet_init(SDL_Renderer *renderer, SpriteSheet_t *const sheet, char const *const sheet_path) {
@@ -395,7 +407,7 @@ bool GameBoard_collision(GameBoard_t const *const board, Tetromino_t *const t, i
   return did_collide;
 }
 
-void _GameBoard_translate(GameBoard_t *const board, Tetromino_t *const tetromino, int rows, int cols) {
+void _GameBoard_translate(GameBoard_t *const board, Tetromino_t *const tetromino, int const rows, int const cols) {
   int *coords = GameBoard_get_tetromino_coords(board, tetromino);
 
   if (GameBoard_collision(board, tetromino, rows, cols)) {
@@ -425,6 +437,33 @@ void _GameBoard_translate(GameBoard_t *const board, Tetromino_t *const tetromino
   free(coords);
 }
 
+void _GameBoard_rotate(GameBoard_t *const board, Tetromino_t *const tetromino, int const deg) {
+  Tetromino_rotate(tetromino, deg);
+  int *coords = GameBoard_get_tetromino_coords(board, tetromino);
+
+  if (GameBoard_collision(board, tetromino, 0, 0)) {
+    Tetromino_rotate(tetromino, -deg);
+    printf("rotation collision!\n");
+    return;
+  }
+
+  for (size_t i = 0; i < TETROMINO_MAP_SIZE; i = i + 2) {
+    int row = coords[i];
+    int col = coords[i + 1];
+
+    board->arr[row][col] = NULL;
+  }
+
+  for (size_t i = 0; i < TETROMINO_MAP_SIZE; i = i + 2) {
+    int row = coords[i];
+    int col = coords[i + 1];
+
+    board->arr[row][col] = tetromino;
+  }
+
+  free(coords);
+}
+
 void GameBoard_translate_left(GameBoard_t *const board, Tetromino_t *const tetromino) {
   _GameBoard_translate(board, tetromino, 0, -1);
 }
@@ -436,8 +475,12 @@ void GameBoard_translate_down(GameBoard_t *const board, Tetromino_t *const tetro
   _GameBoard_translate(board, tetromino, 1, 0);
 }
 
-void GameBoard_rotate_pi(GameBoard_t *const board, Tetromino_t *const tetromino) { assert("unimplemented"); }
-void GameBoard_rotate_neg_pi(GameBoard_t *const board, Tetromino_t *const tetromino) { assert("unimplemented"); }
+void GameBoard_rotate_pi(GameBoard_t *const board, Tetromino_t *const tetromino) {
+  _GameBoard_rotate(board, tetromino, 90);
+}
+void GameBoard_rotate_neg_pi(GameBoard_t *const board, Tetromino_t *const tetromino) {
+  assert(false && "unimplemented");
+}
 
 void GameBoard_clear_full_rows(GameBoard_t *board) {
   // TODO
@@ -503,6 +546,7 @@ void GameApp_handle_input(GameApp_t *state) {
     break;
   case USER_INPUT_ROTATE_RIGHT:
     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "Input: Rotate Right\n");
+    GameBoard_rotate_pi(state->board, *get_active_tetromino(state->tetrominos));
     break;
   case USER_INPUT_ROTATE_LEFT:
     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "Input: Rotate Left\n");

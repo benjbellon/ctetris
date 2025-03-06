@@ -57,6 +57,9 @@ typedef struct {
 
 typedef struct {
   SpriteSheet_t *sheet;
+  // TODO: clip_0, clip_90, clip_180, clip_270 stored as a big array
+  // and then there is an enum we use to flip, which is also the degress?
+  // TETROMINO_0, TETROMINO_90, etc...
   SDL_FRect *clip;
   int deg_rot;
   TetrominoState_t state;
@@ -97,7 +100,7 @@ TetrominoCollection_t *TetrominoCollection_init(size_t const size);
 void TetrominoCollection_free(TetrominoCollection_t *col);
 void TetrominoCollection_push(TetrominoCollection_t *col, Tetromino_t *const new);
 bool TetrominoCollection_contains_active(TetrominoCollection_t const *const col);
-void TetrominoCollection_render(TetrominoCollection_t *col, SDL_Renderer *render);
+void TetrominoCollection_render(TetrominoCollection_t *col, GameBoard_t *board, SDL_Renderer *render);
 
 // TODO: this shoul return a sprite sheet
 int SpriteSheet_init(SDL_Renderer *renderer, SpriteSheet_t *const sheet, char const *const sheet_path);

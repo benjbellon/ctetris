@@ -24,17 +24,13 @@ static SDL_Renderer *renderer = NULL;
 static double PREV_TIME = 0.0;
 static SpriteSheet_t tmp_sheet = {0};
 
-void stdoutLog(void *userdata, int category, SDL_LogPriority priority,
-               const char *message) {
-  printf("%s\n", message);
-}
+void stdoutLog(void *userdata, int category, SDL_LogPriority priority, const char *message) { printf("%s\n", message); }
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
   SDL_SetLogPriorities(SDL_LOG_PRIORITY_DEBUG);
   SDL_SetLogOutputFunction(stdoutLog, NULL);
 
-  SDL_SetAppMetadata(CMAKE_PROJECT_NAME, CMAKE_PROJECT_VERSION,
-                     "com.rse8.tetris");
+  SDL_SetAppMetadata(CMAKE_PROJECT_NAME, CMAKE_PROJECT_VERSION, "com.rse8.tetris");
 
   if (!SDL_Init(SDL_INIT_VIDEO)) {
     SDL_LogError(SDL_LOG_CATEGORY_VIDEO, "Init video: %s", SDL_GetError());
@@ -48,19 +44,15 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
 
   app = GameApp_init();
 
-  printf("\n\nAPP BOARD: %d %d\n\n\n", app->board->rows * BLOCK_SIZE_PIXELS,
-         app->board->cols * BLOCK_SIZE_PIXELS);
-  if (!SDL_CreateWindowAndRenderer(
-          CMAKE_PROJECT_NAME, app->board->cols * BLOCK_SIZE_PIXELS,
-          app->board->rows * BLOCK_SIZE_PIXELS,
-          /* SDL_WINDOW_FULLSCREEN | SDL_WINDOW_BORDERLESS */ 0, &window,
-          &renderer)) {
-    SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Init window and renderer: %s",
-                 SDL_GetError());
+  printf("\n\nAPP BOARD: %d %d\n\n\n", app->board->rows * BLOCK_SIZE_PIXELS, app->board->cols * BLOCK_SIZE_PIXELS);
+  if (!SDL_CreateWindowAndRenderer(CMAKE_PROJECT_NAME, app->board->cols * BLOCK_SIZE_PIXELS,
+                                   app->board->rows * BLOCK_SIZE_PIXELS,
+                                   /* SDL_WINDOW_FULLSCREEN | SDL_WINDOW_BORDERLESS */ 0, &window, &renderer)) {
+    SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Init window and renderer: %s", SDL_GetError());
     return SDL_APP_FAILURE;
   }
 
-  SpriteSheet_init(renderer, &tmp_sheet, "tetronimo_I.bmp");
+  SpriteSheet_init(renderer, &tmp_sheet, "tetrominos.bmp");
   SpriteSheet_tetrominos(&tmp_sheet);
 
   return SDL_APP_CONTINUE;
@@ -111,7 +103,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
   SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0);
   SDL_RenderClear(renderer);
 
-  TetrominoCollection_render(app->tetrominos, renderer);
+  TetrominoCollection_render(app->tetrominos, app->board, renderer);
 
   SDL_RenderPresent(renderer);
   return SDL_APP_CONTINUE;
