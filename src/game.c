@@ -218,6 +218,12 @@ int SpriteSheet_init(SDL_Renderer *renderer, SpriteSheet_t *const sheet, char co
   return SDL_APP_CONTINUE;
 }
 
+void SpriteSheet_free(SpriteSheet_t *o) {
+  if (o == NULL)
+    return;
+  SDL_DestroyTexture(o->sheet);
+}
+
 GameBoard_t *GameBoard_init(int rows, int cols) {
   GameBoard_t *new = malloc(sizeof(GameBoard_t));
   new->rows = rows;
@@ -231,6 +237,19 @@ GameBoard_t *GameBoard_init(int rows, int cols) {
   }
 
   return new;
+}
+
+void GameBoard_free(GameBoard_t *o) {
+  if (o == NULL)
+    return;
+
+  for (size_t row = 0; row < o->rows; row++) {
+    if (o->arr[row] != NULL) {
+      free(o->arr[row]);
+    }
+  }
+  free(o->arr);
+  free(o);
 }
 
 void GameBoard_print_debug(GameBoard_t const *const board) {
@@ -298,10 +317,20 @@ void GameBoard_spawn_tetromino(GameBoard_t **board, TetrominoCollection_t *col, 
   }
 }
 
-void Tetromino_free(Tetromino_t *t) {
-  free(t->clip);
-  free(t->sheet);
-  free(t);
+void TetrominoMatrix_free(TetrominoMatrix *o) {
+  free((int *)o->map);
+  free(o);
+}
+
+void Tetromino_free(Tetromino_t *o) {
+  if (o == NULL)
+    return;
+
+  SpriteSheet_free(o->sheet);
+  free(o->clip);
+  TetrominoMatrix_free(o->mat);
+
+  free(o);
 }
 
 int *GameBoard_get_tetromino_coords(GameBoard_t const *const board, Tetromino_t const *const tetromino) {
@@ -377,6 +406,7 @@ void _GameBoard_translate(GameBoard_t *const board, Tetromino_t *const tetromino
 
   free(coords);
 }
+
 void GameBoard_translate_left(GameBoard_t *const board, Tetromino_t *const tetromino) {
   _GameBoard_translate(board, tetromino, 0, -1);
 }
@@ -387,6 +417,9 @@ void GameBoard_translate_right(GameBoard_t *const board, Tetromino_t *const tetr
 void GameBoard_translate_down(GameBoard_t *const board, Tetromino_t *const tetromino) {
   _GameBoard_translate(board, tetromino, 1, 0);
 }
+
+void GameBoard_rotate_pi(GameBoard_t *const board, Tetromino_t *const tetromino) { assert("unimplemented"); }
+void GameBoard_rotate_neg_pi(GameBoard_t *const board, Tetromino_t *const tetromino) { assert("unimplemented"); }
 
 void GameBoard_clear_full_rows(GameBoard_t *board) {
   // TODO
