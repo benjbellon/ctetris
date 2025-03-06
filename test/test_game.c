@@ -234,25 +234,207 @@ void test_translate_down() {
   TEST_ASSERT_BOARD_ELEMENTS_EQUAL(BOARD_EXPECTED, BOARD_ACTUAL, Z);
 }
 
-void test_rotate_tetromino_matrix_pi() {
-  int expected[TETROMINO_MAP_SIZE] = {0};
+void test_rotate_tetromino_matrix_90() {
+  Tetromino_t *I = Tetromino_init(TETROMINO_SHAPE_TAG_I, 0, 0);
+  Tetromino_t *J = Tetromino_init(TETROMINO_SHAPE_TAG_J, 0, 0);
+  Tetromino_t *L = Tetromino_init(TETROMINO_SHAPE_TAG_L, 0, 0);
+  Tetromino_t *O = Tetromino_init(TETROMINO_SHAPE_TAG_O, 0, 0);
+  Tetromino_t *S = Tetromino_init(TETROMINO_SHAPE_TAG_S, 0, 0);
+  Tetromino_t *T = Tetromino_init(TETROMINO_SHAPE_TAG_T, 0, 0);
+  Tetromino_t *Z = Tetromino_init(TETROMINO_SHAPE_TAG_Z, 0, 0);
 
-  TetrominoMatrix mat =
-      (TetrominoMatrix){.row0 = 0, .col0 = 0, .t = TETROMINO_SHAPE_TAG_I, .size = 4, .map = TETROMINO_MAP_I};
-  memcpy(expected, (int[]){0, 2, 1, 2, 2, 2, 3, 2}, sizeof(int) * TETROMINO_MAP_SIZE);
-  int *actual = TetrominoMatrix_rotate_map_1pi(&mat);
+  Tetromino_rotate(I, 90);
+  Tetromino_rotate(J, 90);
+  Tetromino_rotate(L, 90);
+  Tetromino_rotate(O, 90);
+  Tetromino_rotate(S, 90);
+  Tetromino_rotate(T, 90);
+  Tetromino_rotate(Z, 90);
 
-  TEST_ASSERT_EQUAL_INT_ARRAY(expected, actual, 8);
-  memset(expected, 0, sizeof(int) * TETROMINO_MAP_SIZE);
-  free(actual);
+  {
+    int expected[TETROMINO_MAP_SIZE] = {0, 2, 1, 2, 2, 2, 3, 2};
+    int *actual = TetrominoMatrix_rotate(I->mat, I->deg_rot);
+    TEST_ASSERT_EQUAL_INT_ARRAY_MESSAGE(expected, actual, TETROMINO_MAP_SIZE, "I failed 90 rotation");
+    free(actual);
+  }
 
-  mat = (TetrominoMatrix){.row0 = 0, .col0 = 0, .t = TETROMINO_SHAPE_TAG_I, .size = 3, .map = TETROMINO_MAP_J};
-  memcpy(expected, (int[]){0, 2, 0, 1, 1, 1, 2, 1}, sizeof(int) * TETROMINO_MAP_SIZE);
-  actual = TetrominoMatrix_rotate_map_1pi(&mat);
+  {
+    int expected[TETROMINO_MAP_SIZE] = {0, 2, 0, 1, 1, 1, 2, 1};
+    int *actual = TetrominoMatrix_rotate(J->mat, J->deg_rot);
+    TEST_ASSERT_EQUAL_INT_ARRAY_MESSAGE(expected, actual, TETROMINO_MAP_SIZE, "J failed 90 rotation");
+    free(actual);
+  }
 
-  TEST_ASSERT_EQUAL_INT_ARRAY(expected, actual, 8);
-  memset(expected, 0, sizeof(int) * TETROMINO_MAP_SIZE);
-  free(actual);
+  {
+    int expected[TETROMINO_MAP_SIZE] = {2, 2, 0, 1, 1, 1, 2, 1};
+    int *actual = TetrominoMatrix_rotate(L->mat, L->deg_rot);
+    TEST_ASSERT_EQUAL_INT_ARRAY_MESSAGE(expected, actual, TETROMINO_MAP_SIZE, "L failed 90 rotation");
+    free(actual);
+  }
+
+  {
+    int expected[TETROMINO_MAP_SIZE] = {0, 1, 1, 1, 0, 0, 1, 0};
+    int *actual = TetrominoMatrix_rotate(O->mat, O->deg_rot);
+    TEST_ASSERT_EQUAL_INT_ARRAY_MESSAGE(expected, actual, TETROMINO_MAP_SIZE, "O failed 90 rotation");
+    free(actual);
+  }
+
+  {
+    int expected[TETROMINO_MAP_SIZE] = {1, 2, 2, 2, 0, 1, 1, 1};
+    int *actual = TetrominoMatrix_rotate(S->mat, S->deg_rot);
+    TEST_ASSERT_EQUAL_INT_ARRAY_MESSAGE(expected, actual, TETROMINO_MAP_SIZE, "S failed 90 rotation");
+    free(actual);
+  }
+
+  {
+    int expected[TETROMINO_MAP_SIZE] = {1, 2, 0, 1, 1, 1, 2, 1};
+    int *actual = TetrominoMatrix_rotate(T->mat, T->deg_rot);
+    TEST_ASSERT_EQUAL_INT_ARRAY_MESSAGE(expected, actual, TETROMINO_MAP_SIZE, "T failed 90 rotation");
+    free(actual);
+  }
+
+  {
+    int expected[TETROMINO_MAP_SIZE] = {0, 2, 1, 2, 1, 1, 2, 1};
+    int *actual = TetrominoMatrix_rotate(Z->mat, Z->deg_rot);
+    TEST_ASSERT_EQUAL_INT_ARRAY_MESSAGE(expected, actual, TETROMINO_MAP_SIZE, "Z failed 90 rotation");
+    free(actual);
+  }
+}
+
+void test_rotate_tetromino_matrix_180() {
+  Tetromino_t *I = Tetromino_init(TETROMINO_SHAPE_TAG_I, 0, 0);
+  Tetromino_t *J = Tetromino_init(TETROMINO_SHAPE_TAG_J, 0, 0);
+  Tetromino_t *L = Tetromino_init(TETROMINO_SHAPE_TAG_L, 0, 0);
+  Tetromino_t *O = Tetromino_init(TETROMINO_SHAPE_TAG_O, 0, 0);
+  Tetromino_t *S = Tetromino_init(TETROMINO_SHAPE_TAG_S, 0, 0);
+  Tetromino_t *T = Tetromino_init(TETROMINO_SHAPE_TAG_T, 0, 0);
+  Tetromino_t *Z = Tetromino_init(TETROMINO_SHAPE_TAG_Z, 0, 0);
+
+  Tetromino_rotate(I, 180);
+  Tetromino_rotate(J, 180);
+  Tetromino_rotate(L, 180);
+  Tetromino_rotate(O, 180);
+  Tetromino_rotate(S, 180);
+  Tetromino_rotate(T, 180);
+  Tetromino_rotate(Z, 180);
+
+  {
+    int expected[TETROMINO_MAP_SIZE] = {2, 3, 2, 2, 2, 1, 2, 0};
+    int *actual = TetrominoMatrix_rotate(I->mat, I->deg_rot);
+    TEST_ASSERT_EQUAL_INT_ARRAY_MESSAGE(expected, actual, TETROMINO_MAP_SIZE, "I failed 180 rotation");
+    free(actual);
+  }
+
+  {
+    int expected[TETROMINO_MAP_SIZE] = {2, 2, 1, 2, 1, 1, 1, 0};
+    int *actual = TetrominoMatrix_rotate(J->mat, J->deg_rot);
+    TEST_ASSERT_EQUAL_INT_ARRAY_MESSAGE(expected, actual, TETROMINO_MAP_SIZE, "J failed 180 rotation");
+    free(actual);
+  }
+
+  {
+    int expected[TETROMINO_MAP_SIZE] = {2, 0, 1, 2, 1, 1, 1, 0};
+    int *actual = TetrominoMatrix_rotate(L->mat, L->deg_rot);
+    TEST_ASSERT_EQUAL_INT_ARRAY_MESSAGE(expected, actual, TETROMINO_MAP_SIZE, "L failed 180 rotation");
+    free(actual);
+  }
+
+  {
+    int expected[TETROMINO_MAP_SIZE] = {1, 1, 1, 0, 0, 1, 0, 0};
+    int *actual = TetrominoMatrix_rotate(O->mat, O->deg_rot);
+    TEST_ASSERT_EQUAL_INT_ARRAY_MESSAGE(expected, actual, TETROMINO_MAP_SIZE, "O failed 180 rotation");
+    free(actual);
+  }
+
+  {
+    int expected[TETROMINO_MAP_SIZE] = {2, 1, 2, 0, 1, 2, 1, 1};
+    int *actual = TetrominoMatrix_rotate(S->mat, S->deg_rot);
+    TEST_ASSERT_EQUAL_INT_ARRAY_MESSAGE(expected, actual, TETROMINO_MAP_SIZE, "S failed 180 rotation");
+    free(actual);
+  }
+
+  {
+    int expected[TETROMINO_MAP_SIZE] = {2, 1, 1, 2, 1, 1, 1, 0};
+    int *actual = TetrominoMatrix_rotate(T->mat, T->deg_rot);
+    TEST_ASSERT_EQUAL_INT_ARRAY_MESSAGE(expected, actual, TETROMINO_MAP_SIZE, "T failed 180 rotation");
+    free(actual);
+  }
+
+  {
+    int expected[TETROMINO_MAP_SIZE] = {2, 2, 2, 1, 1, 1, 1, 0};
+    int *actual = TetrominoMatrix_rotate(Z->mat, Z->deg_rot);
+    TEST_ASSERT_EQUAL_INT_ARRAY_MESSAGE(expected, actual, TETROMINO_MAP_SIZE, "Z failed 180 rotation");
+    free(actual);
+  }
+}
+
+void test_rotate_tetromino_matrix_270() {
+  Tetromino_t *I = Tetromino_init(TETROMINO_SHAPE_TAG_I, 0, 0);
+  Tetromino_t *J = Tetromino_init(TETROMINO_SHAPE_TAG_J, 0, 0);
+  Tetromino_t *L = Tetromino_init(TETROMINO_SHAPE_TAG_L, 0, 0);
+  Tetromino_t *O = Tetromino_init(TETROMINO_SHAPE_TAG_O, 0, 0);
+  Tetromino_t *S = Tetromino_init(TETROMINO_SHAPE_TAG_S, 0, 0);
+  Tetromino_t *T = Tetromino_init(TETROMINO_SHAPE_TAG_T, 0, 0);
+  Tetromino_t *Z = Tetromino_init(TETROMINO_SHAPE_TAG_Z, 0, 0);
+
+  Tetromino_rotate(I, 270);
+  Tetromino_rotate(J, 270);
+  Tetromino_rotate(L, 270);
+  Tetromino_rotate(O, 270);
+  Tetromino_rotate(S, 270);
+  Tetromino_rotate(T, 270);
+
+  Tetromino_rotate(Z, 180);
+  Tetromino_rotate(Z, 90);
+
+  {
+    int expected[TETROMINO_MAP_SIZE] = {3, 1, 2, 1, 1, 1, 0, 1};
+    int *actual = TetrominoMatrix_rotate(I->mat, I->deg_rot);
+    TEST_ASSERT_EQUAL_INT_ARRAY_MESSAGE(expected, actual, TETROMINO_MAP_SIZE, "I failed 270 rotation");
+    free(actual);
+  }
+
+  {
+    int expected[TETROMINO_MAP_SIZE] = {2, 0, 2, 1, 1, 1, 0, 1};
+    int *actual = TetrominoMatrix_rotate(J->mat, J->deg_rot);
+    TEST_ASSERT_EQUAL_INT_ARRAY_MESSAGE(expected, actual, TETROMINO_MAP_SIZE, "J failed 270 rotation");
+    free(actual);
+  }
+
+  {
+    int expected[TETROMINO_MAP_SIZE] = {0, 0, 2, 1, 1, 1, 0, 1};
+    int *actual = TetrominoMatrix_rotate(L->mat, L->deg_rot);
+    TEST_ASSERT_EQUAL_INT_ARRAY_MESSAGE(expected, actual, TETROMINO_MAP_SIZE, "L failed 270 rotation");
+    free(actual);
+  }
+
+  {
+    int expected[TETROMINO_MAP_SIZE] = {1, 0, 0, 0, 1, 1, 0, 1};
+    int *actual = TetrominoMatrix_rotate(O->mat, O->deg_rot);
+    TEST_ASSERT_EQUAL_INT_ARRAY_MESSAGE(expected, actual, TETROMINO_MAP_SIZE, "O failed 270 rotation");
+    free(actual);
+  }
+
+  {
+    int expected[TETROMINO_MAP_SIZE] = {1, 0, 0, 0, 2, 1, 1, 1};
+    int *actual = TetrominoMatrix_rotate(S->mat, S->deg_rot);
+    TEST_ASSERT_EQUAL_INT_ARRAY_MESSAGE(expected, actual, TETROMINO_MAP_SIZE, "S failed 270 rotation");
+    free(actual);
+  }
+
+  {
+    int expected[TETROMINO_MAP_SIZE] = {1, 0, 2, 1, 1, 1, 0, 1};
+    int *actual = TetrominoMatrix_rotate(T->mat, T->deg_rot);
+    TEST_ASSERT_EQUAL_INT_ARRAY_MESSAGE(expected, actual, TETROMINO_MAP_SIZE, "T failed 270 rotation");
+    free(actual);
+  }
+
+  {
+    int expected[TETROMINO_MAP_SIZE] = {2, 0, 1, 0, 1, 1, 0, 1};
+    int *actual = TetrominoMatrix_rotate(Z->mat, Z->deg_rot);
+    TEST_ASSERT_EQUAL_INT_ARRAY_MESSAGE(expected, actual, TETROMINO_MAP_SIZE, "Z failed 270 rotation");
+    free(actual);
+  }
 }
 
 int main(int argc, char *argv[]) {
@@ -264,7 +446,8 @@ int main(int argc, char *argv[]) {
   RUN_TEST(test_translate_down);
   RUN_TEST(test_translate_right);
   RUN_TEST(test_translate_left);
-  /* RUN_TEST(test_rotate_tetromino_matrix_pi); */
-
+  RUN_TEST(test_rotate_tetromino_matrix_90);
+  RUN_TEST(test_rotate_tetromino_matrix_180);
+  RUN_TEST(test_rotate_tetromino_matrix_270);
   return UNITY_END();
 }

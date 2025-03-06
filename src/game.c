@@ -16,32 +16,49 @@ static double PREV_TIME = 0.0;
 static const int TETROMINO_MAP_I[TETROMINO_MAP_SIZE] = {1, 0, 1, 1, 1, 2, 1, 3};
 static const int TETROMINO_MAP_J[TETROMINO_MAP_SIZE] = {0, 0, 1, 0, 1, 1, 1, 2};
 static const int TETROMINO_MAP_L[TETROMINO_MAP_SIZE] = {0, 2, 1, 0, 1, 1, 1, 2};
-static const int TETROMINO_MAP_O[TETROMINO_MAP_SIZE] = {0, 1, 0, 2, 1, 1, 1, 2};
+static const int TETROMINO_MAP_O[TETROMINO_MAP_SIZE] = {0, 0, 0, 1, 1, 0, 1, 1};
 static const int TETROMINO_MAP_S[TETROMINO_MAP_SIZE] = {0, 1, 0, 2, 1, 0, 1, 1};
 static const int TETROMINO_MAP_T[TETROMINO_MAP_SIZE] = {0, 1, 1, 0, 1, 1, 1, 2};
 static const int TETROMINO_MAP_Z[TETROMINO_MAP_SIZE] = {0, 0, 0, 1, 1, 1, 1, 2};
 
 void SpriteSheet_tetrominos(SpriteSheet_t *sheet) { sheet_tetrominos = sheet; }
 
-int *TetrominoMatrix_rotate_map_0pi(TetrominoMatrix *mat) {
+int *TetrominoMatrix_rotate(TetrominoMatrix const *const mat, int const deg) {
+  assert(deg == 0 || deg == 90 || deg == 180 || deg == 270 && "invalid tetromino rotation");
+
   int *arr = malloc(sizeof(int) * TETROMINO_MAP_SIZE);
-  for (size_t e = 0; e < TETROMINO_MAP_SIZE; e = e + 2) {
-    arr[e] = mat->map[e];
-    arr[e + 1] = mat->map[e + 1];
+
+  if (deg == 0) {
+    for (size_t e = 0; e < TETROMINO_MAP_SIZE; e = e + 2) {
+      arr[e] = mat->map[e];
+      arr[e + 1] = mat->map[e + 1];
+    }
+  } else if (deg == 90) {
+    for (size_t e = 0; e < TETROMINO_MAP_SIZE; e = e + 2) {
+      // Rotating pi radians: a[i,j] = a[j][n-i-1]
+      arr[e] = mat->map[e + 1];
+      arr[e + 1] = mat->size - mat->map[e] - 1;
+    }
+  } else if (deg == 180) {
+    for (size_t e = 0; e < TETROMINO_MAP_SIZE; e = e + 2) {
+      // Rotating 2pi radians: a[i,j] = a[n-i-1][n-j-1]
+      arr[e] = mat->size - mat->map[e] - 1;
+      arr[e + 1] = mat->size - mat->map[e + 1] - 1;
+    }
+  } else if (deg == 270) {
+    for (size_t e = 0; e < TETROMINO_MAP_SIZE; e = e + 2) {
+      // Rotating 3pi radians: a[i,j] = a[n-j-1][i]
+      arr[e] = mat->size - mat->map[e + 1] - 1;
+      arr[e + 1] = mat->map[e];
+    }
   }
   return arr;
 }
 
-int *TetrominoMatrix_rotate_map_1pi(TetrominoMatrix *mat) {
+void Tetromino_rotate(Tetromino_t *const t, int const deg) {
+  assert(deg == 0 || deg == 90 || deg == 180 || deg == 270 && "invalid tetromino rotation");
 
-  // Rotating pi radians: a[i,j] = a[j][n-i-1]
-  int *arr = malloc(sizeof(int) * TETROMINO_MAP_SIZE);
-  for (size_t e = 0; e < TETROMINO_MAP_SIZE; e = e + 2) {
-    arr[e] = mat->map[e + 1];
-    arr[e + 1] = mat->size - mat->map[e] - 1;
-  }
-
-  return arr;
+  t->deg_rot = (t->deg_rot + deg) % 360;
 }
 
 Tetromino_t **get_active_tetromino(TetrominoCollection_t *coll) {
@@ -111,7 +128,7 @@ Tetromino_t *Tetromino_init(TetrominoShapeTag const tag, int row, int col) {
     new->clip->h = 4 * BLOCK_SIZE_PIXELS;
     new->clip->w = 4 * BLOCK_SIZE_PIXELS;
 
-    *new->mat = (TetrominoMatrix){.t = tag, .row0 = row, .col0 = col - 1, .map = TETROMINO_MAP_O, .size = 4};
+    *new->mat = (TetrominoMatrix){.t = tag, .row0 = row, .col0 = col, .map = TETROMINO_MAP_O, .size = 2};
     break;
   case TETROMINO_SHAPE_TAG_S:
     new->clip->x = 0;
@@ -334,7 +351,7 @@ void Tetromino_free(Tetromino_t *o) {
 }
 
 int *GameBoard_get_tetromino_coords(GameBoard_t const *const board, Tetromino_t const *const tetromino) {
-  int *coords = TetrominoMatrix_rotate_map_0pi(tetromino->mat);
+  int *coords = TetrominoMatrix_rotate(tetromino->mat, tetromino->deg_rot);
 
   for (size_t i = 0; i < TETROMINO_MAP_SIZE; i = i + 2) {
     coords[i] += tetromino->mat->row0;
@@ -344,7 +361,7 @@ int *GameBoard_get_tetromino_coords(GameBoard_t const *const board, Tetromino_t 
   return coords;
 }
 
-bool GameBoard_collision(GameBoard_t const *const board, Tetromino_t const *const t, int rows, int cols) {
+bool GameBoard_collision(GameBoard_t const *const board, Tetromino_t *const t, int rows, int cols) {
   int *coords = GameBoard_get_tetromino_coords(board, t);
   bool did_collide = false;
 
@@ -352,7 +369,7 @@ bool GameBoard_collision(GameBoard_t const *const board, Tetromino_t const *cons
     int curr_row = coords[i];
     int curr_col = coords[i + 1];
 
-    if (curr_row + rows < 0 || curr_row + rows > board->rows - 1) {
+    if (curr_row + rows < 0 || curr_row + rows > board->rows) {
       SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "COLLISION: cannot translate vertically to row %d", coords[i]);
       did_collide = true;
       break;
@@ -364,10 +381,12 @@ bool GameBoard_collision(GameBoard_t const *const board, Tetromino_t const *cons
       break;
     }
 
-    if (board->arr[curr_row + rows][curr_col + cols] != NULL && board->arr[curr_row + rows][curr_col + cols] != t) {
+    if (curr_row + rows == board->rows ||
+        board->arr[curr_row + rows][curr_col + cols] != NULL && board->arr[curr_row + rows][curr_col + cols] != t) {
       SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "COLLISION: cannot translate new new position (%d %d)",
                    curr_row + rows, curr_col + cols);
       did_collide = true;
+      t->state = TETROMINO_STATE_LOCKED;
       break;
     }
   }
@@ -380,7 +399,6 @@ void _GameBoard_translate(GameBoard_t *const board, Tetromino_t *const tetromino
   int *coords = GameBoard_get_tetromino_coords(board, tetromino);
 
   if (GameBoard_collision(board, tetromino, rows, cols)) {
-    tetromino->state = TETROMINO_STATE_LOCKED;
     return;
   }
 

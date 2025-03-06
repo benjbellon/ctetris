@@ -87,13 +87,11 @@ typedef struct {
 
 Tetromino_t *Tetromino_init(TetrominoShapeTag const shape, int row, int col);
 void Tetromino_free(Tetromino_t *t);
+void Tetromino_rotate(Tetromino_t *const t, int const deg);
 
 // TODO: maybe instead just use an Enum with PI, 2PI, 3PI
 void TetrominoMatrix_free(TetrominoMatrix *o);
-int *TetrominoMatrix_rotate_map_0pi(TetrominoMatrix *mat);
-int *TetrominoMatrix_rotate_map_1pi(TetrominoMatrix *mat);
-int *TetrominoMatrix_rotate_map_2pi(TetrominoMatrix *mat);
-int *TetrominoMatrix_rotate_map_3pi(TetrominoMatrix *mat);
+int *TetrominoMatrix_rotate(TetrominoMatrix const *const mat, int const dega);
 
 TetrominoCollection_t *TetrominoCollection_init(size_t const size);
 void TetrominoCollection_free(TetrominoCollection_t *col);
@@ -107,7 +105,7 @@ void SpriteSheet_free(SpriteSheet_t *o);
 
 GameBoard_t *GameBoard_init(int cols, int rows);
 void GameBoard_free(GameBoard_t *o);
-bool GameBoard_collision(GameBoard_t const *const board, Tetromino_t const *const t, int const rows, int const cols);
+bool GameBoard_collision(GameBoard_t const *const board, Tetromino_t *const t, int const rows, int const cols);
 int *GameBoard_get_tetromino_coords(GameBoard_t const *const board, Tetromino_t const *const tetromino);
 void GameBoard_clear_full_rows(GameBoard_t *board);
 void GameBoard_copy(GameBoard_t *const dest, GameBoard_t const *const src);
