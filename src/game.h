@@ -3,6 +3,7 @@
 
 #define BLOCK_SIZE_PIXELS 32
 #define COORDS_SIZE 10
+#define TETROMINO_MAP_SIZE 8
 
 #include <SDL3/SDL_render.h>
 
@@ -39,13 +40,6 @@ typedef enum {
   TETROMINO_SHAPE_TAG_L
 } TetrominoShapeTag;
 
-typedef struct {
-  TetrominoShapeTag tag;
-  int box_x0;
-  int box_y0;
-  int const *map;
-} TetrominoShape;
-
 typedef enum {
   TETROMINO_STATE_ACTIVE,
   TETROMINO_STATE_LOCKED,
@@ -55,20 +49,18 @@ typedef enum {
 } TetrominoState_t;
 
 typedef struct {
-  int row;
-  int col;
-  int square_size;
-} TetrominoBoardBound_t;
+  int row0, col0;
+  size_t size;
+  TetrominoShapeTag t;
+  int const *map;
+} TetrominoMatrix;
 
 typedef struct {
   SpriteSheet_t *sheet;
   SDL_FRect *clip;
   int deg_rot;
-  TetrominoShapeTag tag;
   TetrominoState_t state;
-  TetrominoBoardBound_t *position;
-
-  TetrominoShape *shape;
+  TetrominoMatrix *mat;
 } Tetromino_t;
 
 typedef struct {
@@ -101,8 +93,13 @@ typedef struct {
 TetrominoLockCache_t *TetrominoLockCache_init(size_t const size);
 void TetrominoLockCache_free(TetrominoLockCache_t *o);
 bool TetrominoLockCache_check_and_insert(TetrominoLockCache_t *const col, Tetromino_t *const tetromino);
-Tetromino_t *Tetromino_init(TetrominoShapeTag const shape, double spawn_x, double spawn_y);
+Tetromino_t *Tetromino_init(TetrominoShapeTag const shape, int row, int col);
 void Tetromino_free(Tetromino_t *t);
+
+int *TetrominoMatrix_rotate_map_0pi(TetrominoMatrix *mat);
+int *TetrominoMatrix_rotate_map_1pi(TetrominoMatrix *mat);
+int *TetrominoMatrix_rotate_map_2pi(TetrominoMatrix *mat);
+int *TetrominoMatrix_rotate_map_3pi(TetrominoMatrix *mat);
 
 TetrominoCollection_t *TetrominoCollection_init(size_t const size);
 void TetrominoCollection_free(TetrominoCollection_t *col);
@@ -115,7 +112,6 @@ GameBoard_t *GameBoard_init(int cols, int rows);
 void GameBoard_print_debug(GameBoard_t const *const board);
 
 int *GameBoard_get_tetromino_coords(GameBoard_t *const board, Tetromino_t const *const tetromino);
-void GameBoard_step_down_active_tetromino(GameBoard_t *board, TetrominoCollection_t *tetrominos);
 void GameBoard_translate_left(GameBoard_t *const board, Tetromino_t *const tetromino);
 void GameBoard_translate_right(GameBoard_t *const board, Tetromino_t *const tetromino);
 void GameBoard_translate_down(GameBoard_t *const board, Tetromino_t *const tetromino);
@@ -124,7 +120,7 @@ void GameBoard_rotate_neg_pi_radians(GameBoard_t *const board, Tetromino_t *cons
 void GameBoard_clear_full_rows(GameBoard_t *board);
 void GameBoard_collision_check(GameBoard_t const *const curr, GameBoard_t const *const prev);
 void GameBoard_update(GameBoard_t *board, GameApp_t *app_state);
-void GameBoard_spawn_tetromino(GameBoard_t **board, TetrominoCollection_t *col, int x, int y);
+void GameBoard_spawn_tetromino(GameBoard_t **board, TetrominoCollection_t *col, int spawn_row, int spawn_col);
 void GameBoard_copy(GameBoard_t *const dest, GameBoard_t const *const src);
 
 GameApp_t *GameApp_init();
