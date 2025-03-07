@@ -6,6 +6,7 @@
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_timer.h>
 #include <assert.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -78,13 +79,9 @@ Tetromino_t **get_active_tetromino(TetrominoCollection_t *coll) {
 }
 
 Tetromino_t *Tetromino_init(TetrominoShapeTag const tag, int row, int col) {
-  Tetromino_t *new = malloc(sizeof(Tetromino_t));
-  SDL_FRect *clip = malloc(sizeof(SDL_FRect));
-  TetrominoMatrix *mat = malloc(sizeof(TetrominoMatrix));
-
-  memset(new, 0, sizeof(Tetromino_t));
-  memset(clip, 0, sizeof(SDL_FRect));
-  memset(mat, 0, sizeof(TetrominoMatrix));
+  Tetromino_t *new = calloc(1, sizeof(Tetromino_t));
+  SDL_FRect *clip = calloc(1, sizeof(SDL_FRect));
+  TetrominoMatrix *mat = calloc(1, sizeof(TetrominoMatrix));
 
   new->clip = clip;
   new->mat = mat;
@@ -139,13 +136,11 @@ Tetromino_t *Tetromino_init(TetrominoShapeTag const tag, int row, int col) {
 }
 
 TetrominoCollection_t *TetrominoCollection_init(size_t const size) {
-  TetrominoCollection_t *new = malloc(sizeof(TetrominoCollection_t));
-  memset(new, 0, sizeof(TetrominoCollection_t));
+  TetrominoCollection_t *new = calloc(1, sizeof(TetrominoCollection_t));
 
   new->size = size;
   new->cnt = 0;
-  new->tetrominos = malloc(sizeof(Tetromino_t) * size);
-  memset(new->tetrominos, 0, sizeof(Tetromino_t) * size);
+  new->tetrominos = calloc(size, sizeof(Tetromino_t));
 
   return new;
 }
@@ -172,8 +167,7 @@ void TetrominoCollection_push(TetrominoCollection_t *col, Tetromino_t *const new
 }
 
 void TetrominoCollection_render(TetrominoCollection_t *coll, SDL_Renderer *renderer) {
-  SDL_FRect *pos = malloc(sizeof(SDL_FRect));
-  memset(pos, 0, sizeof(SDL_FRect));
+  SDL_FRect *pos = calloc(1, sizeof(SDL_FRect));
 
   pos->h = BLOCK_SIZE_PIXELS;
   pos->w = BLOCK_SIZE_PIXELS;
@@ -230,11 +224,9 @@ GameBoard_t *GameBoard_init(int rows, int cols) {
   new->rows = rows;
   new->cols = cols;
 
-  new->arr = malloc(sizeof(Tetromino_t **) * rows);
-  memset(new->arr, 0, sizeof(Tetromino_t **) * rows);
+  new->arr = calloc(rows, sizeof(Tetromino_t **));
   for (size_t row = 0; row < new->rows; row++) {
-    new->arr[row] = malloc(sizeof(Tetromino_t *) * cols);
-    memset(new->arr[row], 0, sizeof(Tetromino_t *) * cols);
+    new->arr[row] = calloc(cols, sizeof(Tetromino_t *));
   }
 
   return new;
@@ -358,7 +350,7 @@ bool GameBoard_collision(GameBoard_t const *const board, Tetromino_t *const t, s
 
     if (curr_row + rows == board->rows ||
         (board->arr[curr_row + rows][curr_col + cols] != NULL && board->arr[curr_row + rows][curr_col + cols] != t)) {
-
+      // TODO: It will not collide if either of them is part of the tetro hidden_mask...
       SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "COLLISION: cannot translate new new position (%d %d)",
                    (int)(curr_row + rows), (int)(curr_col + cols));
       did_collide = true;
@@ -371,11 +363,11 @@ bool GameBoard_collision(GameBoard_t const *const board, Tetromino_t *const t, s
   return did_collide;
 }
 
-void _GameBoard_translate(GameBoard_t *const board, Tetromino_t *const tetromino, int const rows, int const cols) {
+bool _GameBoard_translate(GameBoard_t *const board, Tetromino_t *const tetromino, int const rows, int const cols) {
   int *coords = GameBoard_get_tetromino_coords(tetromino);
 
   if (GameBoard_collision(board, tetromino, rows, cols)) {
-    return;
+    return false;
   }
 
   // The simplest solution to move the tetromino's cached board state is to clear the previous position prior to writing
@@ -399,9 +391,11 @@ void _GameBoard_translate(GameBoard_t *const board, Tetromino_t *const tetromino
   tetromino->mat->col0 += cols;
 
   free(coords);
+
+  return true;
 }
 
-void _GameBoard_rotate(GameBoard_t *const board, Tetromino_t *const tetromino, int const deg) {
+bool _GameBoard_rotate(GameBoard_t *const board, Tetromino_t *const tetromino, int const deg) {
   int *prev_coords = GameBoard_get_tetromino_coords(tetromino);
 
   Tetromino_rotate(tetromino, deg);
@@ -410,7 +404,7 @@ void _GameBoard_rotate(GameBoard_t *const board, Tetromino_t *const tetromino, i
   if (GameBoard_collision(board, tetromino, 0, 0)) {
     Tetromino_rotate(tetromino, -deg);
     printf("rotation collision!\n");
-    return;
+    return false;
   }
 
   for (size_t i = 0; i < TETROMINO_MAP_SIZE; i = i + 2) {
@@ -429,6 +423,25 @@ void _GameBoard_rotate(GameBoard_t *const board, Tetromino_t *const tetromino, i
 
   free(prev_coords);
   free(next_coords);
+
+  return true;
+}
+
+void Tetromino_hard_drop(GameBoard_t *const board, Tetromino_t *const tetromino) {
+  // TODO: Actually...........I think all I have to do is call _translate down until I return a collision...
+
+  while (_GameBoard_translate(board, tetromino, 1, 0)) {
+    continue;
+  }
+
+  // TODO:
+  // 1. find the highest row in coords
+  // 2. find the lowest and highest col in coords
+
+  // for every row after highest row
+  // between lowest col and highest col
+
+  // translate down (this will check for collision)
 }
 
 void GameBoard_translate_left(GameBoard_t *const board, Tetromino_t *const tetromino) {
@@ -459,11 +472,11 @@ void GameBoard_destroy_mino(Tetromino_t *const tetromino, int const row, int con
 void GameBoard_clear_full_rows(GameBoard_t *const board) {
   assert(board->rows <= 64 && "empty_mask can only track up to 64 rows");
 
-  unsigned long long empty_mask = 0;
+  uint64_t empty_mask = 0;
   size_t rows_deleted = 0;
+  size_t min_row_deleted = SIZE_MAX;
 
   for (size_t row = 0; row < board->rows; row++) {
-
     for (size_t col = 0; col < board->cols; col++) {
       if (board->arr[row][col] == NULL) {
         empty_mask |= (1UL << row);
@@ -475,7 +488,7 @@ void GameBoard_clear_full_rows(GameBoard_t *const board) {
 
   for (size_t row = 0; row < board->rows; row++) {
     if (!(empty_mask & (1UL << row))) {
-      printf("clear\n");
+      min_row_deleted = row < min_row_deleted ? row : min_row_deleted;
       for (size_t col = 0; col < board->cols; col++) {
         GameBoard_destroy_mino(board->arr[row][col], row, col);
         board->arr[row][col] = NULL;
@@ -483,11 +496,28 @@ void GameBoard_clear_full_rows(GameBoard_t *const board) {
     }
   }
 
+  if (min_row_deleted == SIZE_MAX) {
+    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "No rows were cleared.");
+    return;
+  }
+
+  // TODO: TODODODODODODODOD
+  printf("lowest_row: %lu\n", min_row_deleted);
   printf("rows_deleted: %lu\n", rows_deleted);
   // Gameboard_collapse(board, column);
+
+  // for any tetromino between (0 < row < rows), execute translate down...
+
+  // for all tetrominos, if it has a 0 < [i % 2] < rows element, translate it down...
+  // TODO: think about this...is it okay? could there be a dangling mino that is forced into intersection?
+
+  // Starting at the lowest row - 1 which was marked as "full"
   // each foreach tetromino the row value should be increased by the number
   // of rows deleted....
   //
+  //
+  // This is different than hard drop...because the tetromino may now be allowed to intersect
+  // TODO: when writing game state to the grid, make sure it writes a zero for the masked tetromino...
   // whatever this algorithm is, it should also handle HARD DROP
 }
 
@@ -513,13 +543,11 @@ void GameBoard_update(GameBoard_t *board, GameApp_t *app_state) {
     // TODO: get the shape in waiting, that's the one to use
     // Meanwhile a new "shape in waiting" will be randomly selected
 
-    Tetromino_t *new_tetromino = Tetromino_init(TETROMINO_SHAPE_TAG_I, 0, 0);
+    Tetromino_t *new_tetromino = Tetromino_init(TETROMINO_SHAPE_TAG_Z, 0, 0);
     TetrominoCollection_push(app_state->tetrominos, new_tetromino);
     GameBoard_insert_tetromino(board, new_tetromino);
   }
 
-  // We tick the board at a different rate than the smooth updates of
-  // other objects...
   if (SDL_GetTicks() - PREV_TIME < app_state->tick_rate) {
     return;
   } else {
@@ -537,30 +565,24 @@ void GameBoard_update(GameBoard_t *board, GameApp_t *app_state) {
 void GameApp_handle_input(GameApp_t *state) {
   switch (state->input) {
   case USER_INPUT_SHOW_DEBUG:
-    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "Input: Show Debug\n");
     GameBoard_print_debug(state->board);
     break;
   case USER_INPUT_MOVE_RIGHT:
-    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "Input: Move Right\n");
     GameBoard_translate_right(state->board, *get_active_tetromino(state->tetrominos));
     break;
   case USER_INPUT_MOVE_LEFT:
-    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "Input: Move Left\n");
     GameBoard_translate_left(state->board, *get_active_tetromino(state->tetrominos));
     break;
   case USER_INPUT_ROTATE_RIGHT:
-    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "Input: Rotate Right\n");
     GameBoard_rotate_pi(state->board, *get_active_tetromino(state->tetrominos));
     break;
   case USER_INPUT_ROTATE_LEFT:
-    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "Input: Rotate Left\n");
     break;
   case USER_INPUT_SOFT_DROP:
-    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "Input: Soft Drop\n");
-    GameBoard_translate_down(state->board, state->tetrominos->tetrominos[state->tetrominos->cnt - 1]);
+    GameBoard_translate_down(state->board, *get_active_tetromino(state->tetrominos));
     break;
   case USER_INPUT_HARD_DROP:
-    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "Input: Hard Drop\n");
+    Tetromino_hard_drop(state->board, *get_active_tetromino(state->tetrominos));
     break;
   default:
     break;
