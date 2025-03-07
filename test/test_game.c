@@ -489,6 +489,8 @@ void test_rotate_tetromino_on_board() {
   TEST_ASSERT_BOARD_ELEMENTS_EQUAL(BOARD_EXPECTED, BOARD_ACTUAL, NULL);
 }
 
+void test_set_tetromino_hide_mask() { Tetromino_t *O = Tetromino_init(TETROMINO_SHAPE_TAG_O, 9, 10); }
+
 int main(int argc, char *argv[]) {
   UNITY_BEGIN();
 

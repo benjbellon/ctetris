@@ -56,12 +56,20 @@ typedef struct {
   int const *map;
 } TetrominoMatrix;
 
+// TODO: deg_rot shoud be part of the Matrix
+// Matrix should be called shape
+// If the Tetromino "explodes" or otherwise "distorts"
+// we should expand the area of the shape matrix so that
+// those pieces can be rotated in an "exploded form"
+// And "wall kicks" for exploded minos could end up inside a single gap...
 typedef struct {
   SpriteSheet_t *sheet;
   SDL_FRect *clip;
   int deg_rot;
   TetrominoState_t state;
   TetrominoMatrix *mat;
+  // Whether a block should be hidden
+  uint8_t hide_mask;
 } Tetromino_t;
 
 typedef struct {
@@ -118,6 +126,7 @@ void GameBoard_translate_down(GameBoard_t *const board, Tetromino_t *const tetro
 void GameBoard_translate_left(GameBoard_t *const board, Tetromino_t *const tetromino);
 void GameBoard_translate_right(GameBoard_t *const board, Tetromino_t *const tetromino);
 void GameBoard_update(GameBoard_t *board, GameApp_t *app_state);
+void GameBoard_destroy_mino(GameBoard_t const *const board, Tetromino_t *const tetromino, int const row, int const col);
 
 GameApp_t *GameApp_init();
 void GameApp_handle_input(GameApp_t *state);

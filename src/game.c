@@ -91,6 +91,7 @@ Tetromino_t *Tetromino_init(TetrominoShapeTag const tag, int row, int col) {
   new->sheet = sheet_tetrominos;
   new->deg_rot = 0;
   new->state = TETROMINO_STATE_ACTIVE;
+  new->hide_mask = 0;
 
   new->clip->x = 0;
   new->clip->y = 0;
@@ -177,12 +178,18 @@ void TetrominoCollection_render(TetrominoCollection_t *coll, GameBoard_t *board,
   pos->h = BLOCK_SIZE_PIXELS;
   pos->w = BLOCK_SIZE_PIXELS;
 
+  Tetromino_t *tmp = NULL;
   for (size_t i = 0; i < coll->cnt; i++) {
-    int *coords = GameBoard_get_tetromino_coords(board, coll->tetrominos[i]);
+    tmp = coll->tetrominos[i];
+    int *coords = GameBoard_get_tetromino_coords(board, tmp);
     for (size_t e = 0; e < TETROMINO_MAP_SIZE; e = e + 2) {
+      // We only render coordinates which have not been hidden
+      if (tmp->hide_mask & (1 << e / 2)) {
+        continue;
+      }
       pos->x = coords[e + 1] * BLOCK_SIZE_PIXELS;
       pos->y = coords[e] * BLOCK_SIZE_PIXELS;
-      SDL_RenderTexture(renderer, coll->tetrominos[i]->sheet->sheet, coll->tetrominos[i]->clip, pos);
+      SDL_RenderTexture(renderer, tmp->sheet->sheet, tmp->clip, pos);
     }
   }
 
@@ -453,8 +460,53 @@ void GameBoard_rotate_neg_pi(GameBoard_t *const board, Tetromino_t *const tetrom
   assert(false && "unimplemented");
 }
 
-void GameBoard_clear_full_rows(GameBoard_t *board) {
-  // TODO
+void GameBoard_destroy_mino(GameBoard_t const *const board, Tetromino_t *const tetromino, int const row,
+                            int const col) {
+  // TODO: for that particular tetromino, set the mask
+  // Tetromino_set_visible_mask(tetromino, 0001, row, col);
+  // this is done by checking if any of the coords == row,col, and if so then setting the mask
+
+  int *coords = GameBoard_get_tetromino_coords(board, tetromino);
+  for (size_t i = 0; i < TETROMINO_MAP_SIZE; i = i + 2) {
+    if (coords[i] == row && coords[i + 1] == col) {
+      // We determine whether a mino block is hidden by setting the  0 - 3 bit
+      tetromino->hide_mask |= (1 << i / 2);
+    }
+  }
+}
+
+void GameBoard_clear_full_rows(GameBoard_t *const board) {
+  assert(board->rows <= 64 && "empty_mask can only track up to 64 rows");
+
+  unsigned long long empty_mask = 0;
+  size_t rows_deleted = 0;
+
+  for (size_t row = 0; row < board->rows; row++) {
+
+    for (size_t col = 0; col < board->cols; col++) {
+      if (board->arr[row][col] == NULL) {
+        empty_mask |= (1UL << row);
+        rows_deleted++;
+        break;
+      }
+    }
+  }
+
+  for (size_t row = 0; row < board->rows; row++) {
+    if (!(empty_mask & (1UL << row))) {
+      printf("clear\n");
+      for (size_t col = 0; col < board->cols; col++) {
+        GameBoard_destroy_mino(board, board->arr[row][col], row, col);
+        board->arr[row][col] = NULL;
+      }
+    }
+  }
+
+  // Gameboard_collapse(board, column);
+  // each foreach tetromino the row value should be increased by the number
+  // of rows deleted....
+  //
+  // whatever this algorithm is, it should also handle HARD DROP
 }
 
 // TODO: Maybe change this to get_active, and just check for null??
@@ -500,7 +552,14 @@ void GameBoard_update(GameBoard_t *board, GameApp_t *app_state) {
     return;
   } else {
     GameBoard_translate_down(board, app_state->tetrominos->tetrominos[app_state->tetrominos->cnt - 1]);
+    GameBoard_clear_full_rows(board);
     // TODO: line clearing algorithm drops everything down
+    // GameBoard_clear_full_lines(board, tetrominos);
+    // for each row, if the entire row is all 1s... then we are going to clear those blocks
+    // This means each tetromino also has a MASK which indicates whether to display the coordiante
+    // for instance 0000 0001 1000 would mean no mask, don't show last coord, don't show first coord...
+    // TODO: at the end of the loop, if there are any tetromino's with a mask of all 1s, then we delete it and clean up
+    // the collection.
   }
 
   PREV_TIME = SDL_GetTicks();
