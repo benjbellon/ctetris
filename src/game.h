@@ -48,7 +48,7 @@ typedef enum {
   TETROMINO_STATE_PENDING,
 } TetrominoState_t;
 
-// TODO: This should be called TetrominoShap imo, and it should include deg rotated.
+// TODO: This should be called TetrominoShape imo, and it should include deg rotated.
 typedef struct {
   int row0, col0;
   size_t size;
@@ -79,8 +79,8 @@ typedef struct {
 } TetrominoCollection_t;
 
 typedef struct {
-  int cols;
-  int rows;
+  size_t cols;
+  size_t rows;
   Tetromino_t ***arr;
 } GameBoard_t;
 
@@ -106,7 +106,7 @@ TetrominoCollection_t *TetrominoCollection_init(size_t const size);
 void TetrominoCollection_free(TetrominoCollection_t *col);
 void TetrominoCollection_push(TetrominoCollection_t *col, Tetromino_t *const new);
 bool TetrominoCollection_contains_active(TetrominoCollection_t const *const col);
-void TetrominoCollection_render(TetrominoCollection_t *col, GameBoard_t *board, SDL_Renderer *render);
+void TetrominoCollection_render(TetrominoCollection_t *col, SDL_Renderer *render);
 
 // TODO: this shoul return a sprite sheet
 int SpriteSheet_init(SDL_Renderer *renderer, SpriteSheet_t *const sheet, char const *const sheet_path);
@@ -114,21 +114,20 @@ void SpriteSheet_free(SpriteSheet_t *o);
 
 GameBoard_t *GameBoard_init(int cols, int rows);
 void GameBoard_free(GameBoard_t *o);
-bool GameBoard_collision(GameBoard_t const *const board, Tetromino_t *const t, int const rows, int const cols);
-int *GameBoard_get_tetromino_coords(GameBoard_t const *const board, Tetromino_t const *const tetromino);
+bool GameBoard_collision(GameBoard_t const *const board, Tetromino_t *const t, size_t const rows, size_t const cols);
+int *GameBoard_get_tetromino_coords(Tetromino_t const *const tetromino);
 void GameBoard_clear_full_rows(GameBoard_t *board);
 void GameBoard_copy(GameBoard_t *const dest, GameBoard_t const *const src);
 void GameBoard_print_debug(GameBoard_t const *const board);
-void GameBoard_rotate_neg_pi(GameBoard_t *const board, Tetromino_t *const tetromino);
 void GameBoard_rotate_pi(GameBoard_t *const board, Tetromino_t *const tetromino);
 void GameBoard_insert_tetromino(GameBoard_t *const board, Tetromino_t *const new_tetromino);
 void GameBoard_translate_down(GameBoard_t *const board, Tetromino_t *const tetromino);
 void GameBoard_translate_left(GameBoard_t *const board, Tetromino_t *const tetromino);
 void GameBoard_translate_right(GameBoard_t *const board, Tetromino_t *const tetromino);
 void GameBoard_update(GameBoard_t *board, GameApp_t *app_state);
-void GameBoard_destroy_mino(GameBoard_t const *const board, Tetromino_t *const tetromino, int const row, int const col);
+void GameBoard_destroy_mino(Tetromino_t *const tetromino, int const row, int const col);
 
-GameApp_t *GameApp_init();
+GameApp_t *GameApp_init(void);
 void GameApp_handle_input(GameApp_t *state);
 void GameApp_update(GameApp_t *state);
 

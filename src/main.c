@@ -21,12 +21,13 @@
 static GameApp_t *app = NULL;
 static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
-static double PREV_TIME = 0.0;
 static SpriteSheet_t tmp_sheet = {0};
 
-void stdoutLog(void *userdata, int category, SDL_LogPriority priority, const char *message) { printf("%s\n", message); }
+void stdoutLog(void *UNUSED(userdata), int UNUSED(category), SDL_LogPriority UNUSED(priority), const char *message) {
+  printf("%s\n", message);
+}
 
-SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
+SDL_AppResult SDL_AppInit(void **UNUSED(appstate), int UNUSED(argc), char *UNUSED(argv[])) {
   SDL_SetLogPriorities(SDL_LOG_PRIORITY_DEBUG);
   SDL_SetLogOutputFunction(stdoutLog, NULL);
 
@@ -44,7 +45,6 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
 
   app = GameApp_init();
 
-  printf("\n\nAPP BOARD: %d %d\n\n\n", app->board->rows * BLOCK_SIZE_PIXELS, app->board->cols * BLOCK_SIZE_PIXELS);
   if (!SDL_CreateWindowAndRenderer(CMAKE_PROJECT_NAME, app->board->cols * BLOCK_SIZE_PIXELS,
                                    app->board->rows * BLOCK_SIZE_PIXELS,
                                    /* SDL_WINDOW_FULLSCREEN | SDL_WINDOW_BORDERLESS */ 0, &window, &renderer)) {
@@ -58,7 +58,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
   return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
+SDL_AppResult SDL_AppEvent(void *UNUSED(appstate), SDL_Event *event) {
   if (event->type == SDL_EVENT_QUIT) {
     return SDL_APP_SUCCESS;
   }
@@ -100,16 +100,16 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
   return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult SDL_AppIterate(void *appstate) {
+SDL_AppResult SDL_AppIterate(void *UNUSED(appstate)) {
   GameApp_update(app);
 
   SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0);
   SDL_RenderClear(renderer);
 
-  TetrominoCollection_render(app->tetrominos, app->board, renderer);
+  TetrominoCollection_render(app->tetrominos, renderer);
 
   SDL_RenderPresent(renderer);
   return SDL_APP_CONTINUE;
 }
 
-void SDL_AppQuit(void *appstate, SDL_AppResult result) {}
+void SDL_AppQuit(void *UNUSED(appstate), SDL_AppResult UNUSED(result)) {}

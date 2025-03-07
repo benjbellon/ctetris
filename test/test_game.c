@@ -1,3 +1,4 @@
+#include "cmake_variables.h"
 #include "game.c"
 #include "game.h"
 #include "unity.h"
@@ -9,7 +10,9 @@ static const int BOARD_COLS = 15;
 static GameBoard_t *BOARD_ACTUAL = NULL;
 static GameBoard_t *BOARD_EXPECTED = NULL;
 
-void stdoutLog(void *userdata, int category, SDL_LogPriority priority, const char *message) { printf("%s\n", message); }
+void stdoutLog(void *UNUSED(userdata), int UNUSED(category), SDL_LogPriority UNUSED(priority), const char *message) {
+  printf("%s\n", message);
+}
 
 void setUp(void) {
   SDL_SetLogPriorities(SDL_LOG_PRIORITY_DEBUG);
@@ -28,7 +31,7 @@ void tearDown(void) {
 
 void _th_GameBoard_insert_tetromino(GameBoard_t *const board, Tetromino_t *const t, int const row_shift,
                                     int const col_shift) {
-  int *coords = GameBoard_get_tetromino_coords(board, t);
+  int *coords = GameBoard_get_tetromino_coords(t);
 
   for (size_t e = 0; e < TETROMINO_MAP_SIZE; e = e + 2) {
     board->arr[coords[e] + row_shift][coords[e + 1] + col_shift] = t;
@@ -50,7 +53,7 @@ void TEST_ASSERT_BOARD_ELEMENTS_EQUAL(GameBoard_t *expected, GameBoard_t *actual
   }
 }
 
-void test_tetromino_collection_contains_active() {
+void test_tetromino_collection_contains_active(void) {
   TetrominoCollection_t *coll = TetrominoCollection_init(3);
   Tetromino_t *t1 = Tetromino_init(TETROMINO_SHAPE_TAG_I, 0, 0);
   Tetromino_t *t2 = Tetromino_init(TETROMINO_SHAPE_TAG_J, 0, 0);
@@ -66,17 +69,17 @@ void test_tetromino_collection_contains_active() {
   TEST_ASSERT_EQUAL_INT(true, TetrominoCollection_contains_active(coll));
 }
 
-void test_get_tetromino_coords() {
+void test_get_tetromino_coords(void) {
   Tetromino_t *I = Tetromino_init(TETROMINO_SHAPE_TAG_I, 0, 0);
 
   GameBoard_insert_tetromino(BOARD_ACTUAL, I);
   int expected[] = {0, 0, 0, 1, 0, 2, 0, 3};
 
-  int *actual = GameBoard_get_tetromino_coords(BOARD_ACTUAL, I);
+  int *actual = GameBoard_get_tetromino_coords(I);
   TEST_ASSERT_EQUAL_INT_ARRAY(expected, actual, TETROMINO_MAP_SIZE);
 }
 
-void test_translate_right() {
+void test_translate_right(void) {
   Tetromino_t *I = Tetromino_init(TETROMINO_SHAPE_TAG_I, 5, 1);
   Tetromino_t *J = Tetromino_init(TETROMINO_SHAPE_TAG_J, 8, 1);
   Tetromino_t *L = Tetromino_init(TETROMINO_SHAPE_TAG_L, 11, 6);
@@ -128,7 +131,7 @@ void test_translate_right() {
   TEST_ASSERT_BOARD_ELEMENTS_EQUAL(BOARD_EXPECTED, BOARD_ACTUAL, Z);
 }
 
-void test_translate_left() {
+void test_translate_left(void) {
   Tetromino_t *I = Tetromino_init(TETROMINO_SHAPE_TAG_I, 2, 1);
   Tetromino_t *J = Tetromino_init(TETROMINO_SHAPE_TAG_J, 8, 1);
   Tetromino_t *L = Tetromino_init(TETROMINO_SHAPE_TAG_L, 11, 6);
@@ -180,7 +183,7 @@ void test_translate_left() {
   TEST_ASSERT_BOARD_ELEMENTS_EQUAL(BOARD_EXPECTED, BOARD_ACTUAL, Z);
 }
 
-void test_translate_down() {
+void test_translate_down(void) {
   Tetromino_t *I = Tetromino_init(TETROMINO_SHAPE_TAG_I, 5, 1);
   Tetromino_t *J = Tetromino_init(TETROMINO_SHAPE_TAG_J, 8, 1);
   Tetromino_t *L = Tetromino_init(TETROMINO_SHAPE_TAG_L, 11, 6);
@@ -232,7 +235,7 @@ void test_translate_down() {
   TEST_ASSERT_BOARD_ELEMENTS_EQUAL(BOARD_EXPECTED, BOARD_ACTUAL, Z);
 }
 
-void test_rotate_tetromino_matrix_90() {
+void test_rotate_tetromino_matrix_90(void) {
   Tetromino_t *I = Tetromino_init(TETROMINO_SHAPE_TAG_I, 0, 0);
   Tetromino_t *J = Tetromino_init(TETROMINO_SHAPE_TAG_J, 0, 0);
   Tetromino_t *L = Tetromino_init(TETROMINO_SHAPE_TAG_L, 0, 0);
@@ -299,7 +302,7 @@ void test_rotate_tetromino_matrix_90() {
   }
 }
 
-void test_rotate_tetromino_matrix_180() {
+void test_rotate_tetromino_matrix_180(void) {
   Tetromino_t *I = Tetromino_init(TETROMINO_SHAPE_TAG_I, 0, 0);
   Tetromino_t *J = Tetromino_init(TETROMINO_SHAPE_TAG_J, 0, 0);
   Tetromino_t *L = Tetromino_init(TETROMINO_SHAPE_TAG_L, 0, 0);
@@ -366,7 +369,7 @@ void test_rotate_tetromino_matrix_180() {
   }
 }
 
-void test_rotate_tetromino_matrix_270() {
+void test_rotate_tetromino_matrix_270(void) {
   Tetromino_t *I = Tetromino_init(TETROMINO_SHAPE_TAG_I, 0, 0);
   Tetromino_t *J = Tetromino_init(TETROMINO_SHAPE_TAG_J, 0, 0);
   Tetromino_t *L = Tetromino_init(TETROMINO_SHAPE_TAG_L, 0, 0);
@@ -435,7 +438,7 @@ void test_rotate_tetromino_matrix_270() {
   }
 }
 
-void test_rotate_tetromino_on_board() {
+void test_rotate_tetromino_on_board(void) {
   Tetromino_t *I = Tetromino_init(TETROMINO_SHAPE_TAG_I, 1, 0);
   Tetromino_t *J = Tetromino_init(TETROMINO_SHAPE_TAG_J, 1, 8);
   Tetromino_t *L = Tetromino_init(TETROMINO_SHAPE_TAG_L, 9, 3);
@@ -489,9 +492,9 @@ void test_rotate_tetromino_on_board() {
   TEST_ASSERT_BOARD_ELEMENTS_EQUAL(BOARD_EXPECTED, BOARD_ACTUAL, NULL);
 }
 
-void test_set_tetromino_hide_mask() { Tetromino_t *O = Tetromino_init(TETROMINO_SHAPE_TAG_O, 9, 10); }
+/* void test_set_tetromino_hide_mask(void) { Tetromino_t *O = Tetromino_init(TETROMINO_SHAPE_TAG_O, 9, 10); } */
 
-int main(int argc, char *argv[]) {
+int main(void) {
   UNITY_BEGIN();
 
   /* RUN_TEST(test_collision_check); */

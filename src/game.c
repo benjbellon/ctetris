@@ -21,8 +21,8 @@ static const int TETROMINO_MAP_S[TETROMINO_MAP_SIZE] = {0, 1, 0, 2, 1, 0, 1, 1};
 static const int TETROMINO_MAP_T[TETROMINO_MAP_SIZE] = {0, 1, 1, 0, 1, 1, 1, 2};
 static const int TETROMINO_MAP_Z[TETROMINO_MAP_SIZE] = {0, 0, 0, 1, 1, 1, 1, 2};
 
-void _GameBoard_print_tetromino(GameBoard_t const *const b, Tetromino_t const *const t) {
-  int const *const coords = GameBoard_get_tetromino_coords(b, t);
+void _GameBoard_print_tetromino(Tetromino_t const *const t) {
+  int const *const coords = GameBoard_get_tetromino_coords(t);
   for (size_t i = 0; i < TETROMINO_MAP_SIZE; i = i + 2) {
     printf("(%d %d) ", coords[i], coords[i + 1]);
   }
@@ -171,7 +171,7 @@ void TetrominoCollection_push(TetrominoCollection_t *col, Tetromino_t *const new
   col->cnt += 1;
 }
 
-void TetrominoCollection_render(TetrominoCollection_t *coll, GameBoard_t *board, SDL_Renderer *renderer) {
+void TetrominoCollection_render(TetrominoCollection_t *coll, SDL_Renderer *renderer) {
   SDL_FRect *pos = malloc(sizeof(SDL_FRect));
   memset(pos, 0, sizeof(SDL_FRect));
 
@@ -181,7 +181,7 @@ void TetrominoCollection_render(TetrominoCollection_t *coll, GameBoard_t *board,
   Tetromino_t *tmp = NULL;
   for (size_t i = 0; i < coll->cnt; i++) {
     tmp = coll->tetrominos[i];
-    int *coords = GameBoard_get_tetromino_coords(board, tmp);
+    int *coords = GameBoard_get_tetromino_coords(tmp);
     for (size_t e = 0; e < TETROMINO_MAP_SIZE; e = e + 2) {
       // We only render coordinates which have not been hidden
       if (tmp->hide_mask & (1 << e / 2)) {
@@ -268,7 +268,7 @@ void GameBoard_print_debug(GameBoard_t const *const board) {
   printf("\n");
 }
 
-GameApp_t *GameApp_init() {
+GameApp_t *GameApp_init(void) {
   GameApp_t *new = malloc(sizeof(GameApp_t));
 
   SDL_Rect bounds = {0};
@@ -325,7 +325,7 @@ void Tetromino_free(Tetromino_t *o) {
   free(o);
 }
 
-int *GameBoard_get_tetromino_coords(GameBoard_t const *const board, Tetromino_t const *const tetromino) {
+int *GameBoard_get_tetromino_coords(Tetromino_t const *const tetromino) {
   int *coords = TetrominoMatrix_rotate(tetromino->mat, tetromino->deg_rot);
 
   for (size_t i = 0; i < TETROMINO_MAP_SIZE; i = i + 2) {
@@ -336,8 +336,8 @@ int *GameBoard_get_tetromino_coords(GameBoard_t const *const board, Tetromino_t 
   return coords;
 }
 
-bool GameBoard_collision(GameBoard_t const *const board, Tetromino_t *const t, int rows, int cols) {
-  int *coords = GameBoard_get_tetromino_coords(board, t);
+bool GameBoard_collision(GameBoard_t const *const board, Tetromino_t *const t, size_t const rows, size_t const cols) {
+  int *coords = GameBoard_get_tetromino_coords(t);
   bool did_collide = false;
 
   for (size_t i = 0; i < TETROMINO_MAP_SIZE; i = i + 2) {
@@ -357,10 +357,10 @@ bool GameBoard_collision(GameBoard_t const *const board, Tetromino_t *const t, i
     }
 
     if (curr_row + rows == board->rows ||
-        board->arr[curr_row + rows][curr_col + cols] != NULL && board->arr[curr_row + rows][curr_col + cols] != t) {
+        (board->arr[curr_row + rows][curr_col + cols] != NULL && board->arr[curr_row + rows][curr_col + cols] != t)) {
 
       SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "COLLISION: cannot translate new new position (%d %d)",
-                   curr_row + rows, curr_col + cols);
+                   (int)(curr_row + rows), (int)(curr_col + cols));
       did_collide = true;
       t->state = TETROMINO_STATE_LOCKED;
       break;
@@ -372,7 +372,7 @@ bool GameBoard_collision(GameBoard_t const *const board, Tetromino_t *const t, i
 }
 
 void _GameBoard_translate(GameBoard_t *const board, Tetromino_t *const tetromino, int const rows, int const cols) {
-  int *coords = GameBoard_get_tetromino_coords(board, tetromino);
+  int *coords = GameBoard_get_tetromino_coords(tetromino);
 
   if (GameBoard_collision(board, tetromino, rows, cols)) {
     return;
@@ -402,10 +402,10 @@ void _GameBoard_translate(GameBoard_t *const board, Tetromino_t *const tetromino
 }
 
 void _GameBoard_rotate(GameBoard_t *const board, Tetromino_t *const tetromino, int const deg) {
-  int *prev_coords = GameBoard_get_tetromino_coords(board, tetromino);
+  int *prev_coords = GameBoard_get_tetromino_coords(tetromino);
 
   Tetromino_rotate(tetromino, deg);
-  int *next_coords = GameBoard_get_tetromino_coords(board, tetromino);
+  int *next_coords = GameBoard_get_tetromino_coords(tetromino);
 
   if (GameBoard_collision(board, tetromino, 0, 0)) {
     Tetromino_rotate(tetromino, -deg);
@@ -445,13 +445,9 @@ void GameBoard_translate_down(GameBoard_t *const board, Tetromino_t *const tetro
 void GameBoard_rotate_pi(GameBoard_t *const board, Tetromino_t *const tetromino) {
   _GameBoard_rotate(board, tetromino, 90);
 }
-void GameBoard_rotate_neg_pi(GameBoard_t *const board, Tetromino_t *const tetromino) {
-  assert(false && "unimplemented");
-}
 
-void GameBoard_destroy_mino(GameBoard_t const *const board, Tetromino_t *const tetromino, int const row,
-                            int const col) {
-  int *coords = GameBoard_get_tetromino_coords(board, tetromino);
+void GameBoard_destroy_mino(Tetromino_t *const tetromino, int const row, int const col) {
+  int *coords = GameBoard_get_tetromino_coords(tetromino);
   for (size_t i = 0; i < TETROMINO_MAP_SIZE; i = i + 2) {
     if (coords[i] == row && coords[i + 1] == col) {
       // We determine whether a mino block is hidden by setting the  0 - 3 bit
@@ -481,12 +477,13 @@ void GameBoard_clear_full_rows(GameBoard_t *const board) {
     if (!(empty_mask & (1UL << row))) {
       printf("clear\n");
       for (size_t col = 0; col < board->cols; col++) {
-        GameBoard_destroy_mino(board, board->arr[row][col], row, col);
+        GameBoard_destroy_mino(board->arr[row][col], row, col);
         board->arr[row][col] = NULL;
       }
     }
   }
 
+  printf("rows_deleted: %lu\n", rows_deleted);
   // Gameboard_collapse(board, column);
   // each foreach tetromino the row value should be increased by the number
   // of rows deleted....
