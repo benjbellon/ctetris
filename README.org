@@ -1,0 +1,24 @@
+#+TITLE:Tetris Workshop ReadMe
+#+PUBLISHED_AT: n/a
+
+
+* Feature and Mechanic Ideas
+Various ideas for mechanics which add fun and a new degree of difficulty in development.
+
+** Mino "Creatures"
+Each Mino contains a small "thing" which can affect game play. Maybe:
+- a bullet that breaks out after some time shaking around
+- a magnet that pulls it faster towards similar minos.
+- explodes the tetromino and allows you to rotate a fragemented tetromino in a larger bounding box...
+- A creature that breaks out, eats certain color bricks and poops out a different color
+- A create that makes the tetromino go sideways and stick to the wall, until eventually it drops randomly..
+
+** Scoring Systems
+Maybe clearing lines isn't enough. If you clear lines with the same color in them, maybe you collect certain rewards?
+  
+
+** Program Tetris on progressively smaller machines
+Embedded tetris!
+
+** Different block types
+Type U, V, W, X, Y, Z.... etc...

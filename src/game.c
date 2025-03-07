@@ -402,14 +402,6 @@ void _GameBoard_translate(GameBoard_t *const board, Tetromino_t *const tetromino
 }
 
 void _GameBoard_rotate(GameBoard_t *const board, Tetromino_t *const tetromino, int const deg) {
-  // TODO: what's happening..............................
-  // I think it's that the rotation happens after the step down...so the calculated previous
-  // coords are incorrect.
-  //
-  // 1. I could scan the entire board and remove all references to this tetromino
-  // 2. I could cache the previous coords and just remove them
-  // 3. I could store a counter of down steps since last cleared and then add those row back for clear...
-
   int *prev_coords = GameBoard_get_tetromino_coords(board, tetromino);
 
   Tetromino_rotate(tetromino, deg);
@@ -421,8 +413,6 @@ void _GameBoard_rotate(GameBoard_t *const board, Tetromino_t *const tetromino, i
     return;
   }
 
-  // before I clear, rotate back
-  Tetromino_rotate(tetromino, -deg);
   for (size_t i = 0; i < TETROMINO_MAP_SIZE; i = i + 2) {
     int row = prev_coords[i];
     int col = prev_coords[i + 1];
@@ -430,7 +420,6 @@ void _GameBoard_rotate(GameBoard_t *const board, Tetromino_t *const tetromino, i
     board->arr[row][col] = NULL;
   }
 
-  Tetromino_rotate(tetromino, deg);
   for (size_t i = 0; i < TETROMINO_MAP_SIZE; i = i + 2) {
     int row = next_coords[i];
     int col = next_coords[i + 1];
@@ -462,10 +451,6 @@ void GameBoard_rotate_neg_pi(GameBoard_t *const board, Tetromino_t *const tetrom
 
 void GameBoard_destroy_mino(GameBoard_t const *const board, Tetromino_t *const tetromino, int const row,
                             int const col) {
-  // TODO: for that particular tetromino, set the mask
-  // Tetromino_set_visible_mask(tetromino, 0001, row, col);
-  // this is done by checking if any of the coords == row,col, and if so then setting the mask
-
   int *coords = GameBoard_get_tetromino_coords(board, tetromino);
   for (size_t i = 0; i < TETROMINO_MAP_SIZE; i = i + 2) {
     if (coords[i] == row && coords[i + 1] == col) {
@@ -527,16 +512,6 @@ bool TetrominoCollection_contains_active(TetrominoCollection_t const *const col)
 }
 
 void GameBoard_update(GameBoard_t *board, GameApp_t *app_state) {
-  //////////////////////////////////////////////////
-  // while (not immutable)
-  // tick down
-  // check collision
-
-  // while (no lines)
-  // delete all lines
-  // drop tetrominos down
-  //////////////////////////////////////////////////
-
   if (!TetrominoCollection_contains_active(app_state->tetrominos)) {
     // TODO: get the shape in waiting, that's the one to use
     // Meanwhile a new "shape in waiting" will be randomly selected
@@ -553,14 +528,11 @@ void GameBoard_update(GameBoard_t *board, GameApp_t *app_state) {
   } else {
     GameBoard_translate_down(board, app_state->tetrominos->tetrominos[app_state->tetrominos->cnt - 1]);
     GameBoard_clear_full_rows(board);
-    // TODO: line clearing algorithm drops everything down
-    // GameBoard_clear_full_lines(board, tetrominos);
-    // for each row, if the entire row is all 1s... then we are going to clear those blocks
-    // This means each tetromino also has a MASK which indicates whether to display the coordiante
-    // for instance 0000 0001 1000 would mean no mask, don't show last coord, don't show first coord...
-    // TODO: at the end of the loop, if there are any tetromino's with a mask of all 1s, then we delete it and clean up
-    // the collection.
   }
+
+  // TODO: at the end of the loop, if there are any tetromino's with a mask of all 1s, then we delete it and clean up
+  // the collection.
+  // make this not stupid, and only clean up every now and then...
 
   PREV_TIME = SDL_GetTicks();
 }
@@ -604,16 +576,9 @@ void GameApp_update(GameApp_t *state) {
   GameApp_handle_input(state);
   GameBoard_update(state->board, state);
 
-  // Update Game Board
-  // 1. insert tetromino?
-  // 2. movement checks...
-
-  // everything falls
-
-  // create new tetromino if none are falling?
-
-  // TODO:
-  // everything tick down by one
-  // collision detection
-  // line detection for deletion (but then I need to tick down again?)
+  // We neeed to update game state
+  // PAUSE MENU
+  // LEVEL CHANGE
+  // START MENU
+  // etc...
 }

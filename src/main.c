@@ -65,6 +65,9 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 
   if (event->type == SDL_EVENT_KEY_DOWN) {
     switch (event->key.scancode) {
+    case SDL_SCANCODE_UP:
+      app->input = USER_INPUT_ROTATE_RIGHT;
+      break;
     case SDL_SCANCODE_K:
       app->input = USER_INPUT_ROTATE_RIGHT;
       break;
