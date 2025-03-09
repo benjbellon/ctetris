@@ -23,7 +23,7 @@ static const int TETROMINO_MAP_T[TETROMINO_MAP_SIZE] = {0, 1, 1, 0, 1, 1, 1, 2};
 static const int TETROMINO_MAP_Z[TETROMINO_MAP_SIZE] = {0, 0, 0, 1, 1, 1, 1, 2};
 
 void _GameBoard_print_tetromino(Tetromino_t const *const t) {
-  int const *const coords = GameBoard_get_tetromino_coords(t);
+  int const *const coords = Tetromino_get_absolute_coords(t);
   for (size_t i = 0; i < TETROMINO_MAP_SIZE; i = i + 2) {
     printf("(%d %d) ", coords[i], coords[i + 1]);
   }
@@ -108,27 +108,35 @@ Tetromino_t *Tetromino_init(TetrominoShapeTag const tag, int row, int col) {
   //  .  .
   //  .    .
   //
+
   switch (tag) {
   case TETROMINO_SHAPE_TAG_I:
-    *new->mat = (TetrominoMatrix){.t = tag, .row0 = row - 1, .col0 = col, .map = TETROMINO_MAP_I, .size = 4};
+    *new->mat =
+        (TetrominoMatrix){.t = tag, .row0 = row - 1, .col0 = col, .map = TETROMINO_MAP_I, .size = 4, .mino_shift = {0}};
     break;
   case TETROMINO_SHAPE_TAG_J:
-    *new->mat = (TetrominoMatrix){.t = tag, .row0 = row, .col0 = col, .map = TETROMINO_MAP_J, .size = 3};
+    *new->mat =
+        (TetrominoMatrix){.t = tag, .row0 = row, .col0 = col, .map = TETROMINO_MAP_J, .size = 3, .mino_shift = {0}};
     break;
   case TETROMINO_SHAPE_TAG_L:
-    *new->mat = (TetrominoMatrix){.t = tag, .row0 = row, .col0 = col - 2, .map = TETROMINO_MAP_L, .size = 3};
+    *new->mat =
+        (TetrominoMatrix){.t = tag, .row0 = row, .col0 = col - 2, .map = TETROMINO_MAP_L, .size = 3, .mino_shift = {0}};
     break;
   case TETROMINO_SHAPE_TAG_O:
-    *new->mat = (TetrominoMatrix){.t = tag, .row0 = row, .col0 = col, .map = TETROMINO_MAP_O, .size = 2};
+    *new->mat =
+        (TetrominoMatrix){.t = tag, .row0 = row, .col0 = col, .map = TETROMINO_MAP_O, .size = 2, .mino_shift = {0}};
     break;
   case TETROMINO_SHAPE_TAG_S:
-    *new->mat = (TetrominoMatrix){.t = tag, .row0 = row, .col0 = col - 1, .map = TETROMINO_MAP_S, .size = 3};
+    *new->mat =
+        (TetrominoMatrix){.t = tag, .row0 = row, .col0 = col - 1, .map = TETROMINO_MAP_S, .size = 3, .mino_shift = {0}};
     break;
   case TETROMINO_SHAPE_TAG_T:
-    *new->mat = (TetrominoMatrix){.t = tag, .row0 = row, .col0 = col - 1, .map = TETROMINO_MAP_T, .size = 3};
+    *new->mat =
+        (TetrominoMatrix){.t = tag, .row0 = row, .col0 = col - 1, .map = TETROMINO_MAP_T, .size = 3, .mino_shift = {0}};
     break;
   case TETROMINO_SHAPE_TAG_Z:
-    *new->mat = (TetrominoMatrix){.t = tag, .row0 = row, .col0 = col, .map = TETROMINO_MAP_Z, .size = 3};
+    *new->mat =
+        (TetrominoMatrix){.t = tag, .row0 = row, .col0 = col, .map = TETROMINO_MAP_Z, .size = 3, .mino_shift = {0}};
     break;
   }
 
@@ -157,7 +165,7 @@ void TetrominoCollection_push(TetrominoCollection_t *col, Tetromino_t *const new
   if (col->cnt + 1 > col->size) {
     // TODO: resize and add more
     // TODO: also need to possibly add reduce size
-    SDL_LogError(SDL_LOG_CATEGORY_TEST, "resize not implemented...\n");
+    SDL_LogDebug(SDL_LOG_CATEGORY_TEST, "resize not implemented...\n");
     assert(false);
     return;
   }
@@ -175,7 +183,7 @@ void TetrominoCollection_render(TetrominoCollection_t *coll, SDL_Renderer *rende
   Tetromino_t *tmp = NULL;
   for (size_t i = 0; i < coll->cnt; i++) {
     tmp = coll->tetrominos[i];
-    int *coords = GameBoard_get_tetromino_coords(tmp);
+    int *coords = Tetromino_get_absolute_coords(tmp);
     for (size_t e = 0; e < TETROMINO_MAP_SIZE; e = e + 2) {
       // We only render coordinates which have not been hidden
       if (tmp->hide_mask & (1 << e / 2)) {
@@ -248,6 +256,9 @@ void GameBoard_free(GameBoard_t *o) {
 void GameBoard_print_debug(GameBoard_t const *const board) {
   for (size_t row = 0; row < board->rows; row++) {
     for (size_t col = 0; col < board->cols; col++) {
+
+      // if tetromino mask i
+
       if (board->arr[row][col] != 0) {
         printf(" 1 ");
       } else {
@@ -257,7 +268,7 @@ void GameBoard_print_debug(GameBoard_t const *const board) {
     printf("\n");
   }
 
-  printf("\n");
+  printf("\n\n\n\n\n\n");
 }
 
 GameApp_t *GameApp_init(void) {
@@ -274,7 +285,7 @@ GameApp_t *GameApp_init(void) {
 
   // TODO: how big should the board be?
   int rows = 10;
-  int cols = 20;
+  int cols = 4;
   new->board = GameBoard_init(rows, cols);
   new->previous_board = GameBoard_init(rows, cols);
   return new;
@@ -317,19 +328,19 @@ void Tetromino_free(Tetromino_t *o) {
   free(o);
 }
 
-int *GameBoard_get_tetromino_coords(Tetromino_t const *const tetromino) {
+int *Tetromino_get_absolute_coords(Tetromino_t const *const tetromino) {
   int *coords = TetrominoMatrix_rotate(tetromino->mat, tetromino->deg_rot);
 
   for (size_t i = 0; i < TETROMINO_MAP_SIZE; i = i + 2) {
-    coords[i] += tetromino->mat->row0;
-    coords[i + 1] += tetromino->mat->col0;
+    coords[i] += (tetromino->mat->row0 + tetromino->mat->mino_shift[i]);
+    coords[i + 1] += (tetromino->mat->col0 + tetromino->mat->mino_shift[i + 1]);
   }
 
   return coords;
 }
 
 bool GameBoard_collision(GameBoard_t const *const board, Tetromino_t *const t, size_t const rows, size_t const cols) {
-  int *coords = GameBoard_get_tetromino_coords(t);
+  int *coords = Tetromino_get_absolute_coords(t);
   bool did_collide = false;
 
   for (size_t i = 0; i < TETROMINO_MAP_SIZE; i = i + 2) {
@@ -364,7 +375,7 @@ bool GameBoard_collision(GameBoard_t const *const board, Tetromino_t *const t, s
 }
 
 bool _GameBoard_translate(GameBoard_t *const board, Tetromino_t *const tetromino, int const rows, int const cols) {
-  int *coords = GameBoard_get_tetromino_coords(tetromino);
+  int *coords = Tetromino_get_absolute_coords(tetromino);
 
   if (GameBoard_collision(board, tetromino, rows, cols)) {
     return false;
@@ -396,10 +407,10 @@ bool _GameBoard_translate(GameBoard_t *const board, Tetromino_t *const tetromino
 }
 
 bool _GameBoard_rotate(GameBoard_t *const board, Tetromino_t *const tetromino, int const deg) {
-  int *prev_coords = GameBoard_get_tetromino_coords(tetromino);
+  int *prev_coords = Tetromino_get_absolute_coords(tetromino);
 
   Tetromino_rotate(tetromino, deg);
-  int *next_coords = GameBoard_get_tetromino_coords(tetromino);
+  int *next_coords = Tetromino_get_absolute_coords(tetromino);
 
   if (GameBoard_collision(board, tetromino, 0, 0)) {
     Tetromino_rotate(tetromino, -deg);
@@ -428,20 +439,9 @@ bool _GameBoard_rotate(GameBoard_t *const board, Tetromino_t *const tetromino, i
 }
 
 void Tetromino_hard_drop(GameBoard_t *const board, Tetromino_t *const tetromino) {
-  // TODO: Actually...........I think all I have to do is call _translate down until I return a collision...
-
   while (_GameBoard_translate(board, tetromino, 1, 0)) {
     continue;
   }
-
-  // TODO:
-  // 1. find the highest row in coords
-  // 2. find the lowest and highest col in coords
-
-  // for every row after highest row
-  // between lowest col and highest col
-
-  // translate down (this will check for collision)
 }
 
 void GameBoard_translate_left(GameBoard_t *const board, Tetromino_t *const tetromino) {
@@ -459,66 +459,102 @@ void GameBoard_rotate_pi(GameBoard_t *const board, Tetromino_t *const tetromino)
   _GameBoard_rotate(board, tetromino, 90);
 }
 
-void GameBoard_destroy_mino(Tetromino_t *const tetromino, int const row, int const col) {
-  int *coords = GameBoard_get_tetromino_coords(tetromino);
+void Tetromino_hide_mino(Tetromino_t *const tetromino, int const row) {
+  int *coords = Tetromino_get_absolute_coords(tetromino);
   for (size_t i = 0; i < TETROMINO_MAP_SIZE; i = i + 2) {
-    if (coords[i] == row && coords[i + 1] == col) {
+    if (coords[i] == row) {
       // We determine whether a mino block is hidden by setting the  0 - 3 bit
       tetromino->hide_mask |= (1 << i / 2);
     }
   }
 }
 
-void GameBoard_clear_full_rows(GameBoard_t *const board) {
-  assert(board->rows <= 64 && "empty_mask can only track up to 64 rows");
-
-  uint64_t empty_mask = 0;
-  size_t rows_deleted = 0;
-  size_t min_row_deleted = SIZE_MAX;
+/**
+ * Creates a bit mask indicating which rows in the game board are completely filled.
+ *
+ * @param board Pointer to the GameBoard structure
+ * @return Bit mask where each bit represents a row (1 = full, 0 = not full)
+ */
+uint64_t GameBoard_full_row_mask(GameBoard_t const *const board) {
+  uint64_t mask = (uint64_t)~0;
 
   for (size_t row = 0; row < board->rows; row++) {
     for (size_t col = 0; col < board->cols; col++) {
       if (board->arr[row][col] == NULL) {
-        empty_mask |= (1UL << row);
-        rows_deleted++;
+        mask &= ~(1UL << row);
         break;
       }
     }
   }
 
-  for (size_t row = 0; row < board->rows; row++) {
-    if (!(empty_mask & (1UL << row))) {
-      min_row_deleted = row < min_row_deleted ? row : min_row_deleted;
-      for (size_t col = 0; col < board->cols; col++) {
-        GameBoard_destroy_mino(board->arr[row][col], row, col);
-        board->arr[row][col] = NULL;
+  // TODO: This has 1 when not full...maybe flip it????
+  return mask;
+}
+
+/**
+ * Computes shifts for each row based on a bit mask
+ *
+ * @param row_mask Bit mask indicating which rows are marked
+ * @param row_cnt Number of rows to process
+ * @return Array of shift values for each row, caller must free
+ *
+ * For each set bit in row_mask, increments shift values for all previous rows
+ */
+int *compute_row_shifts(uint64_t const row_mask, size_t const row_cnt) {
+  int *arr = calloc(row_cnt, sizeof(int));
+
+  for (uint64_t i = 0; i < row_cnt; i++) {
+    if (row_mask & (1UL << i)) {
+      for (size_t j = 0; j < i; j++) {
+        arr[j]++;
       }
     }
   }
 
-  if (min_row_deleted == SIZE_MAX) {
-    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "No rows were cleared.");
-    return;
+  return arr;
+}
+
+void GameBoard_clear_full_rows(GameBoard_t *const board, TetrominoCollection_t *coll) {
+  assert(board->rows <= 64 && "empty_mask can only track up to 64 rows");
+
+  size_t rows_to_clear = SIZE_MAX;
+  uint64_t const full_mask = GameBoard_full_row_mask(board);
+  int *row_shift = compute_row_shifts(full_mask, board->rows);
+
+  for (size_t row = 0; row < board->rows; row++) {
+    bool should_hide = (full_mask & (1UL << row)) != 0 ? true : false;
+    if (should_hide) {
+      for (size_t col = 0; col < board->cols; col++) {
+        Tetromino_hide_mino(board->arr[row][col], row);
+      }
+    }
   }
 
-  // TODO: TODODODODODODODOD
-  printf("lowest_row: %lu\n", min_row_deleted);
-  printf("rows_deleted: %lu\n", rows_deleted);
-  // Gameboard_collapse(board, column);
+  for (size_t i = 0; i < coll->cnt; i++) {
+    {
+      int *coords = Tetromino_get_absolute_coords(coll->tetrominos[i]);
+      for (size_t j = 0; j < TETROMINO_MAP_SIZE; j = j + 2) {
 
-  // for any tetromino between (0 < row < rows), execute translate down...
+        board->arr[coords[j]][coords[j + 1]] = 0;
 
-  // for all tetrominos, if it has a 0 < [i % 2] < rows element, translate it down...
-  // TODO: think about this...is it okay? could there be a dangling mino that is forced into intersection?
+        coll->tetrominos[i]->mat->mino_shift[j] += row_shift[coords[j]];
+      }
 
-  // Starting at the lowest row - 1 which was marked as "full"
-  // each foreach tetromino the row value should be increased by the number
-  // of rows deleted....
-  //
-  //
-  // This is different than hard drop...because the tetromino may now be allowed to intersect
-  // TODO: when writing game state to the grid, make sure it writes a zero for the masked tetromino...
-  // whatever this algorithm is, it should also handle HARD DROP
+      // Get and set shifted coords
+      for (size_t j = 0; j < TETROMINO_MAP_SIZE; j = j + 2) {
+        int *coords = Tetromino_get_absolute_coords(coll->tetrominos[i]);
+
+        // only set if the hide mask is 0
+        if (!(coll->tetrominos[i]->hide_mask & (1 << j / 2))) {
+          board->arr[coords[j]][coords[j + 1]] = coll->tetrominos[i];
+        }
+      }
+    }
+  }
+}
+
+void Tetromino_mino_shift(Tetromino_t *const t, size_t const idx, size_t const row_shift) {
+  t->mat->mino_shift[idx] += row_shift;
 }
 
 // TODO: Maybe change this to get_active, and just check for null??
@@ -551,8 +587,19 @@ void GameBoard_update(GameBoard_t *board, GameApp_t *app_state) {
   if (SDL_GetTicks() - PREV_TIME < app_state->tick_rate) {
     return;
   } else {
+
+    /* for (size_t i = 0; i < app_state->tetrominos->cnt; i++) { */
+    /*   int *coords = Tetromino_get_absolute_coords(app_state->tetrominos->tetrominos[i]); */
+
+    /*   for (int e = 0; e < TETROMINO_MAP_SIZE; e++) { */
+    /*     printf("%d ", coords[e]); */
+    /*   } */
+    /*   printf("\n"); */
+    /* } */
+    /* printf("---------------------------\n"); */
+
     GameBoard_translate_down(board, app_state->tetrominos->tetrominos[app_state->tetrominos->cnt - 1]);
-    GameBoard_clear_full_rows(board);
+    GameBoard_clear_full_rows(board, app_state->tetrominos);
   }
 
   // TODO: at the end of the loop, if there are any tetromino's with a mask of all 1s, then we delete it and clean up

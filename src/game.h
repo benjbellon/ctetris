@@ -54,6 +54,7 @@ typedef struct {
   size_t size;
   TetrominoShapeTag t;
   int const *map;
+  int mino_shift[TETROMINO_MAP_SIZE];
 } TetrominoMatrix;
 
 // TODO: deg_rot shoud be part of the Matrix
@@ -97,6 +98,9 @@ typedef struct {
 Tetromino_t *Tetromino_init(TetrominoShapeTag const shape, int row, int col);
 void Tetromino_free(Tetromino_t *t);
 void Tetromino_rotate(Tetromino_t *const t, int const deg);
+void Tetromino_hide_mino(Tetromino_t *const tetromino, int const row);
+int *Tetromino_get_absolute_coords(Tetromino_t const *const tetromino);
+void Tetromino_mino_shift(Tetromino_t *const t, size_t const idx, size_t const row_shift);
 
 // TODO: maybe instead just use an Enum with PI, 2PI, 3PI
 void TetrominoMatrix_free(TetrominoMatrix *o);
@@ -112,11 +116,13 @@ void TetrominoCollection_render(TetrominoCollection_t *col, SDL_Renderer *render
 int SpriteSheet_init(SDL_Renderer *renderer, SpriteSheet_t *const sheet, char const *const sheet_path);
 void SpriteSheet_free(SpriteSheet_t *o);
 
+// TODO: remove the gameboard as an essential thing, and just have a method
+// GameBoard_cache_state which computes the new state from the previous state and tetrominos...
+// This way I don't interweave gameboard state mutations in other functions
 GameBoard_t *GameBoard_init(int cols, int rows);
 void GameBoard_free(GameBoard_t *o);
 bool GameBoard_collision(GameBoard_t const *const board, Tetromino_t *const t, size_t const rows, size_t const cols);
-int *GameBoard_get_tetromino_coords(Tetromino_t const *const tetromino);
-void GameBoard_clear_full_rows(GameBoard_t *board);
+void GameBoard_clear_full_rows(GameBoard_t *board, TetrominoCollection_t *coll);
 void GameBoard_copy(GameBoard_t *const dest, GameBoard_t const *const src);
 void GameBoard_print_debug(GameBoard_t const *const board);
 void GameBoard_rotate_pi(GameBoard_t *const board, Tetromino_t *const tetromino);
@@ -125,7 +131,7 @@ void GameBoard_translate_down(GameBoard_t *const board, Tetromino_t *const tetro
 void GameBoard_translate_left(GameBoard_t *const board, Tetromino_t *const tetromino);
 void GameBoard_translate_right(GameBoard_t *const board, Tetromino_t *const tetromino);
 void GameBoard_update(GameBoard_t *board, GameApp_t *app_state);
-void GameBoard_destroy_mino(Tetromino_t *const tetromino, int const row, int const col);
+uint64_t GameBoard_full_row_mask(GameBoard_t const *const board);
 
 GameApp_t *GameApp_init(void);
 void GameApp_handle_input(GameApp_t *state);

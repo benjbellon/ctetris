@@ -31,11 +31,13 @@ void tearDown(void) {
 
 void _th_GameBoard_insert_tetromino(GameBoard_t *const board, Tetromino_t *const t, int const row_shift,
                                     int const col_shift) {
-  int *coords = GameBoard_get_tetromino_coords(t);
+  int *coords = Tetromino_get_absolute_coords(t);
 
   for (size_t e = 0; e < TETROMINO_MAP_SIZE; e = e + 2) {
     board->arr[coords[e] + row_shift][coords[e + 1] + col_shift] = t;
   }
+
+  free(coords);
 }
 
 void TEST_ASSERT_BOARD_ELEMENTS_EQUAL(GameBoard_t *expected, GameBoard_t *actual, Tetromino_t *filter) {
@@ -75,8 +77,10 @@ void test_get_tetromino_coords(void) {
   GameBoard_insert_tetromino(BOARD_ACTUAL, I);
   int expected[] = {0, 0, 0, 1, 0, 2, 0, 3};
 
-  int *actual = GameBoard_get_tetromino_coords(I);
+  int *actual = Tetromino_get_absolute_coords(I);
   TEST_ASSERT_EQUAL_INT_ARRAY(expected, actual, TETROMINO_MAP_SIZE);
+
+  free(actual);
 }
 
 void test_translate_right(void) {
@@ -492,7 +496,15 @@ void test_rotate_tetromino_on_board(void) {
   TEST_ASSERT_BOARD_ELEMENTS_EQUAL(BOARD_EXPECTED, BOARD_ACTUAL, NULL);
 }
 
-/* void test_set_tetromino_hide_mask(void) { Tetromino_t *O = Tetromino_init(TETROMINO_SHAPE_TAG_O, 9, 10); } */
+void test_compute_row_shfits(void) {
+  int mask = 0b010110100;
+  int expected[] = {4, 4, 3, 3, 2, 1, 1, 0, 0};
+
+  int *actual = compute_row_shifts(mask, 9);
+  TEST_ASSERT_EQUAL_INT_ARRAY(expected, actual, 9);
+
+  free(actual);
+}
 
 int main(void) {
   UNITY_BEGIN();
@@ -507,5 +519,6 @@ int main(void) {
   RUN_TEST(test_rotate_tetromino_matrix_180);
   RUN_TEST(test_rotate_tetromino_matrix_270);
   RUN_TEST(test_rotate_tetromino_on_board);
+  RUN_TEST(test_compute_row_shfits);
   return UNITY_END();
 }
